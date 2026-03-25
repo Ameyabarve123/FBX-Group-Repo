@@ -88,24 +88,6 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
               <p className="text-white/70 text-lg font-mono pl-7">{order.trackingNumber}</p>
             </div>
           </div>
-
-          {/* Right: map placeholder */}
-          <div className="flex-1 min-h-[260px] sm:min-h-0 bg-[#080710] border border-white/[0.04] flex flex-col items-center justify-center gap-4 p-10">
-            <MapPin size={24} className="text-white/15" />
-            <p className="text-white/20 text-sm tracking-[0.18em] uppercase text-center">
-              Tracking API Map with Location
-            </p>
-            {order.trackingUrl && (
-              <a
-                href={order.trackingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-base text-[#9b7fe8] hover:text-[#b8a0f0] underline underline-offset-2 transition"
-              >
-                Open tracking page ↗
-              </a>
-            )}
-          </div>
         </div>
 
         {/* ── Actions ── */}
