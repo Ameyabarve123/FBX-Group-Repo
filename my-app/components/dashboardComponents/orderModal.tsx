@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { X, FileText, DollarSign, Hash, MapPin } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Order {
   title: string;
   description: string;
@@ -17,12 +16,9 @@ interface OrderModalProps {
   onClose: () => void;
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
 export default function OrderModal({ order, onClose }: OrderModalProps) {
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -36,80 +32,67 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70"
       onClick={onClose}
     >
+      <div className="flex min-h-full items-center justify-center p-8">
       <div
-        className="relative w-full max-w-2xl rounded-2xl bg-[#1e1c2e] border border-white/10 shadow-2xl"
+        className="relative w-full max-w-4xl bg-[#0d0c14] border border-white/[0.06]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-4 border-b border-white/5 flex items-start justify-between gap-4">
+        <div className="px-10 py-8 border-b border-white/[0.06] flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-[#8b8099] font-semibold mb-1">
+            <p className="text-sm uppercase tracking-[0.22em] text-white/20 font-medium mb-2">
               Order Details
             </p>
-            <h2 className="text-[#e8e0ee] text-xl font-bold tracking-wide">{order.title}</h2>
+            <h2 className="text-white/75 text-3xl font-light tracking-wide">{order.title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#8b8099] hover:text-[#e8e0ee] hover:bg-white/5 transition flex-shrink-0 mt-0.5"
+            className="w-10 h-10 flex items-center justify-center text-white/20 hover:text-white/50 transition flex-shrink-0 mt-1"
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* ── Body — two column layout ── */}
-        <div className="px-6 py-5 flex flex-col sm:flex-row gap-5">
+        {/* ── Body ── */}
+        <div className="px-10 py-9 flex flex-col sm:flex-row gap-10">
 
           {/* Left: fields */}
-          <div className="flex flex-col gap-4 sm:w-52 flex-shrink-0">
+          <div className="flex flex-col gap-9 sm:w-72 flex-shrink-0">
             {/* Description */}
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#7B93F9]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <FileText size={14} className="text-[#7B93F9]" />
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <FileText size={15} className="text-[#9b7fe8]" />
+                <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Description</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                  Description
-                </p>
-                <p className="text-[#c4b8d4] text-sm leading-relaxed">{order.description}</p>
-              </div>
+              <p className="text-white/50 text-lg leading-relaxed pl-7">{order.description}</p>
             </div>
 
             {/* Price */}
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#F97B8B]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <DollarSign size={14} className="text-[#F97B8B]" />
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <DollarSign size={15} className="text-[#e8629a]" />
+                <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Price</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                  Price
-                </p>
-                <p className="text-[#e8e0ee] text-sm font-semibold">{order.price}</p>
-              </div>
+              <p className="text-white/70 text-lg font-medium pl-7">{order.price}</p>
             </div>
 
             {/* Tracking Number */}
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#8B7B8F]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Hash size={14} className="text-[#8B7B8F]" />
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <Hash size={15} className="text-[#7e8fb5]" />
+                <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Tracking Number</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                  Tracking Number
-                </p>
-                <p className="text-[#e8e0ee] text-sm font-mono">{order.trackingNumber}</p>
-              </div>
+              <p className="text-white/70 text-lg font-mono pl-7">{order.trackingNumber}</p>
             </div>
           </div>
 
           {/* Right: map placeholder */}
-          <div className="flex-1 min-h-[200px] sm:min-h-0 rounded-xl bg-[#F97B8B]/5 border border-[#F97B8B]/10 flex flex-col items-center justify-center gap-3 p-6">
-            <div className="w-10 h-10 rounded-xl bg-[#F97B8B]/15 flex items-center justify-center">
-              <MapPin size={20} className="text-[#F97B8B]" />
-            </div>
-            <p className="text-[#8b8099] text-sm font-medium text-center">
+          <div className="flex-1 min-h-[260px] sm:min-h-0 bg-[#080710] border border-white/[0.04] flex flex-col items-center justify-center gap-4 p-10">
+            <MapPin size={24} className="text-white/15" />
+            <p className="text-white/20 text-sm tracking-[0.18em] uppercase text-center">
               Tracking API Map with Location
             </p>
             {order.trackingUrl && (
@@ -117,7 +100,7 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
                 href={order.trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[#7B93F9] hover:text-[#a0b0fb] underline underline-offset-2 transition"
+                className="text-base text-[#9b7fe8] hover:text-[#b8a0f0] underline underline-offset-2 transition"
               >
                 Open tracking page ↗
               </a>
@@ -126,14 +109,15 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
         </div>
 
         {/* ── Actions ── */}
-        <div className="px-6 pb-6">
+        <div className="px-10 pb-10 border-t border-white/[0.06] pt-6">
           <button
             onClick={onClose}
-            className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#e8e0ee] text-sm font-semibold tracking-wide transition-all duration-200 border border-white/10"
+            className="w-full py-4 text-white/30 text-sm uppercase tracking-[0.2em] hover:text-white/60 hover:bg-white/[0.02] border border-white/[0.06] transition-colors duration-150"
           >
-            Exit
+            Close
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

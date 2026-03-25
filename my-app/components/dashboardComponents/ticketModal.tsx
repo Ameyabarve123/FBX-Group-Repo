@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { X, CheckCircle, User, Phone, FileText } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Ticket {
   title: string;
   name: string;
@@ -17,18 +16,13 @@ interface TicketModalProps {
   onResolve: (ticket: Ticket) => void;
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
 export default function TicketModal({ ticket, onClose, onResolve }: TicketModalProps) {
-  // Close on Escape key
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Prevent body scroll while modal is open
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -37,90 +31,78 @@ export default function TicketModal({ ticket, onClose, onResolve }: TicketModalP
   if (!ticket) return null;
 
   return (
-    // Backdrop
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70"
       onClick={onClose}
     >
-      {/* Panel — stop click propagation so clicking inside doesn't close */}
+      <div className="flex min-h-full items-center justify-center p-8">
       <div
-        className="relative w-full max-w-md rounded-2xl bg-[#1e1c2e] border border-white/10 shadow-2xl"
+        className="relative w-full max-w-2xl bg-[#0d0c14] border border-white/[0.06]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-4 border-b border-white/5 flex items-start justify-between gap-4">
+        <div className="px-10 py-8 border-b border-white/[0.06] flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-[#8b8099] font-semibold mb-1">
+            <p className="text-sm uppercase tracking-[0.22em] text-white/20 font-medium mb-2">
               Support Ticket
             </p>
-            <h2 className="text-[#e8e0ee] text-xl font-bold tracking-wide">{ticket.title}</h2>
+            <h2 className="text-white/75 text-3xl font-light tracking-wide">{ticket.title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#8b8099] hover:text-[#e8e0ee] hover:bg-white/5 transition flex-shrink-0 mt-0.5"
+            className="w-10 h-10 flex items-center justify-center text-white/20 hover:text-white/50 transition flex-shrink-0 mt-1"
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
         {/* ── Fields ── */}
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-10 py-9 space-y-9">
           {/* Name */}
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-lg bg-[#F97B8B]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <User size={14} className="text-[#F97B8B]" />
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <User size={15} className="text-[#e8629a]" />
+              <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Name</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                Name
-              </p>
-              <p className="text-[#e8e0ee] text-sm font-medium">{ticket.name}</p>
-            </div>
+            <p className="text-white/60 text-lg pl-7">{ticket.name}</p>
           </div>
 
           {/* Contact */}
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-lg bg-[#7B93F9]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Phone size={14} className="text-[#7B93F9]" />
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <Phone size={15} className="text-[#9b7fe8]" />
+              <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Contact</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                Contact
-              </p>
-              <p className="text-[#e8e0ee] text-sm font-medium">{ticket.contact}</p>
-            </div>
+            <p className="text-white/60 text-lg pl-7">{ticket.contact}</p>
           </div>
 
           {/* Details */}
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-lg bg-[#8B7B8F]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <FileText size={14} className="text-[#8B7B8F]" />
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <FileText size={15} className="text-[#7e8fb5]" />
+              <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Details</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-[#4a4560] font-bold mb-0.5">
-                Details
-              </p>
-              <p className="text-[#c4b8d4] text-sm leading-relaxed">{ticket.details}</p>
-            </div>
+            <p className="text-white/50 text-lg leading-relaxed pl-7">{ticket.details}</p>
           </div>
         </div>
 
         {/* ── Actions ── */}
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="px-10 pb-10 border-t border-white/[0.06] pt-6 flex gap-4">
           <button
             onClick={() => { onResolve(ticket); onClose(); }}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F97B8B] hover:bg-[#f86070] text-[#1a1a2e] text-sm font-bold tracking-wide transition-all duration-200 shadow-lg shadow-[#F97B8B]/20 hover:shadow-[#F97B8B]/30"
+            className="flex-1 flex items-center justify-center gap-2.5 py-4 bg-[#e8629a]/10 hover:bg-[#e8629a]/15 text-[#e8629a] text-sm uppercase tracking-[0.2em] border border-[#e8629a]/20 hover:border-[#e8629a]/30 transition-colors duration-150"
           >
-            <CheckCircle size={15} />
+            <CheckCircle size={16} />
             Resolve
           </button>
           <button
             onClick={onClose}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#e8e0ee] text-sm font-semibold tracking-wide transition-all duration-200 border border-white/10"
+            className="flex-1 py-4 text-white/30 text-sm uppercase tracking-[0.2em] hover:text-white/60 hover:bg-white/[0.02] border border-white/[0.06] transition-colors duration-150"
           >
-            Exit
+            Close
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

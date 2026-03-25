@@ -1,61 +1,56 @@
 "use client";
 
-// ─── 1. IMPORTS — add useState and TicketModal ────────────────────────────────
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   ShoppingCart,
   TicketCheck,
   ExternalLink,
-  TrendingUp,
   LucideIcon,
 } from "lucide-react";
 import TicketModal from "@/components/dashboardComponents/ticketModal";
 import PlanModal from "@/components/dashboardComponents/planModal";
 import OrderModal from "@/components/dashboardComponents/orderModal";
+import { createClient } from "@/lib/supabase/client";
 
-// ─── 2. TYPES ─────────────────────────────────────────────────────────────────
-interface Customer {
-  id: number;
-  name: string;
-  plan: string;
-  initials: string;
-  active: boolean;
+// ─── TYPES ────────────────────────────────────────────────────────────────────
+
+interface DBUser {
+  id: string;
+  client_name: string;
+  is_admin: boolean;
+  user_uuid: string;
 }
 
-interface Ticket {
-  id: number;
-  customer: string;
-  initials: string;
+interface DBTicket {
+  id: string;
   title: string;
-  priority: "high" | "medium" | "low";
-  // These fields feed the modal
-  contact: string;
-  details: string;
+  contact_details: string;
+  ticket_details: string;
+  client_name: string;
+  user_uuid: string;
 }
 
-interface Order {
-  id: number;
-  customer: string;
-  initials: string;
-  details: string;
-  // Add these:
+interface DBOrder {
+  id: string;
+  order_title: string;
   description: string;
   price: string;
-  trackingNumber: string;
+  tracking_number: string;
+  user_uuid: string;
 }
 
-interface StatCardProps {
-  label: string;
-  value: string;
-  delta: string;
-  color: string;
+interface DBPlan {
+  id: string;
+  plan_title: string;
+  description: string;
+  price: string;
+  user_uuid: string;
 }
 
 interface AvatarProps {
   initials: string;
-  size?: "sm" | "md" | "lg";
-  color?: "primary" | "secondary" | "accent";
+  color?: "pink" | "violet" | "slate";
 }
 
 interface SectionCardProps {
@@ -63,297 +58,292 @@ interface SectionCardProps {
   icon: LucideIcon;
   count?: number;
   children: React.ReactNode;
-  accentColor?: string;
+  accent?: "pink" | "violet" | "slate";
 }
 
-// ─── 3. DUMMY DATA — added contact + details to tickets ──────────────────────
-const customers: Customer[] = [
-  { id: 1, name: "Customer1", plan: "Plan1", initials: "C1", active: true },
-  { id: 2, name: "Customer2", plan: "Plan2", initials: "C2", active: false },
-];
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-const tickets: Ticket[] = [
-  {
-    id: 1,
-    customer: "Customer1",
-    initials: "C1",
-    title: "Title1",
-    priority: "high",
-    contact: "customer1@email.com",
-    details: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  },
-  {
-    id: 2,
-    customer: "Customer2",
-    initials: "C2",
-    title: "Title2",
-    priority: "medium",
-    contact: "customer2@email.com",
-    details: "Sed do eiusmod tempor incididunt ut labore et dolore magna.",
-  },
-];
+function getInitials(name: string): string {
+  if (!name) return "?";
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
 
-const orders: Order[] = [
-  {
-    id: 1,
-    customer: "Customer2",
-    initials: "C2",
-    details: "Order #4821 – 3 items",
-    description: "Lorem ipsum dolor sit amet.",
-    price: "$49.99",
-    trackingNumber: "1Z999AA10123456784",
-  },
-];
+// ─── ACCENT CONFIGS ───────────────────────────────────────────────────────────
 
-// ─── 4. SUB-COMPONENTS (unchanged) ───────────────────────────────────────────
-function Avatar({ initials, size = "md", color = "primary" }: AvatarProps) {
-  const sizes: Record<string, string> = {
-    sm: "w-8 h-8 text-xs",
-    md: "w-10 h-10 sm:w-11 sm:h-11 text-sm",
-    lg: "w-14 h-14 text-base",
-  };
-  const colors: Record<string, string> = {
-    primary: "bg-[#F97B8B] text-[#1a1a2e]",
-    secondary: "bg-[#7B93F9] text-[#1a1a2e]",
-    accent: "bg-[#8B7B8F] text-[#e8e0ee]",
+const ACCENTS = {
+  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20", hex: "#e8629a" },
+  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20", hex: "#9b7fe8" },
+  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10", border: "border-[#7e8fb5]/20", hex: "#7e8fb5" },
+};
+
+// ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
+
+function Avatar({ initials, color = "pink" }: AvatarProps) {
+  const styles = {
+    pink:   "bg-[#e8629a]/10 text-[#e8629a] ring-1 ring-[#e8629a]/25",
+    violet: "bg-[#9b7fe8]/10 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/25",
+    slate:  "bg-[#7e8fb5]/10 text-[#7e8fb5] ring-1 ring-[#7e8fb5]/25",
   };
   return (
-    <div
-      className={`${sizes[size]} ${colors[color]} rounded-xl flex items-center justify-center font-bold tracking-wide flex-shrink-0 shadow-lg`}
-    >
+    <div className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 ${styles[color]}`}>
       {initials}
     </div>
   );
 }
 
-function PlanBadge({ plan }: { plan: string }) {
+function StatCard({ label, value, accent = "violet" }: { label: string; value: string; accent?: "pink" | "violet" | "slate" }) {
+  const a = ACCENTS[accent];
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-sm text-[#c4b8d4]">{plan}</span>
-      <ExternalLink size={12} className="text-[#F97B8B] flex-shrink-0" />
+    <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden group hover:border-white/10 transition-colors duration-300">
+      <div className={`absolute inset-x-0 top-0 h-px ${a.bg}`} />
+      <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">{label}</p>
+      <p className={`text-4xl font-light ${a.text} tabular-nums`}>{value}</p>
     </div>
   );
 }
 
-function PriorityBadge({ priority }: { priority: Ticket["priority"] }) {
-  const styles: Record<Ticket["priority"], string> = {
-    high: "bg-[#F97B8B]/20 text-[#F97B8B] border-[#F97B8B]/30",
-    medium: "bg-[#7B93F9]/20 text-[#7B93F9] border-[#7B93F9]/30",
-    low: "bg-[#8B7B8F]/20 text-[#8B7B8F] border-[#8B7B8F]/30",
-  };
+function SectionCard({ title, icon: Icon, count, children, accent = "violet" }: SectionCardProps) {
+  const a = ACCENTS[accent];
   return (
-    <span
-      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[priority]} tracking-wide uppercase whitespace-nowrap`}
-    >
-      {priority}
-    </span>
-  );
-}
-
-function StatCard({ label, value, delta, color }: StatCardProps) {
-  return (
-    <div className="rounded-2xl bg-[#1e1c2e] border border-white/5 p-4 sm:p-5 flex flex-col gap-2 sm:gap-3 shadow-xl">
-      <span className="text-[#8b8099] text-[10px] sm:text-xs uppercase tracking-widest font-semibold">
-        {label}
-      </span>
-      <span className="text-[#e8e0ee] text-2xl sm:text-3xl font-bold tracking-tight">{value}</span>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <TrendingUp size={11} style={{ color }} />
-        <span className="text-xs font-semibold" style={{ color }}>
-          {delta}
-        </span>
-        <span className="text-[#8b8099] text-xs">vs last month</span>
-      </div>
-    </div>
-  );
-}
-
-function SectionCard({
-  title,
-  icon: Icon,
-  count,
-  children,
-  accentColor = "#F97B8B",
-}: SectionCardProps) {
-  return (
-    <div className="rounded-2xl bg-[#1e1c2e] border border-white/5 overflow-hidden shadow-xl">
-      <div className="px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/5">
+    <div className="bg-[#0d0c14] border border-white/[0.06]">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${accentColor}22` }}
-          >
-            <Icon size={16} style={{ color: accentColor }} />
-          </div>
-          <h2 className="text-[#e8e0ee] font-semibold text-sm sm:text-base tracking-wide">
-            {title}
-          </h2>
+          <Icon size={15} className={a.text} />
+          <h2 className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">{title}</h2>
         </div>
         {count !== undefined && (
-          <span
-            className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-            style={{ backgroundColor: `${accentColor}22`, color: accentColor }}
-          >
-            {count}
+          <span className={`text-xs font-bold px-2 py-0.5 ${a.bg} ${a.text} tracking-wider`}>
+            {String(count).padStart(2, "0")}
           </span>
         )}
       </div>
-      <div className="divide-y divide-white/5">{children}</div>
+      <div>{children}</div>
     </div>
   );
 }
 
-// ─── 5. PAGE COMPONENT ────────────────────────────────────────────────────────
+function TableHeader({ cols }: { cols: string[] }) {
+  return (
+    <div
+      className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
+      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}
+    >
+      {cols.map((c) => (
+        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
+      ))}
+    </div>
+  );
+}
+
+function LoadingRow() {
+  return (
+    <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.04]">
+      <div className="w-10 h-10 rounded-md bg-white/5 flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-white/5 rounded w-1/3" />
+        <div className="h-2.5 bg-white/5 rounded w-1/5" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyRow({ message }: { message: string }) {
+  return (
+    <div className="px-5 py-8 text-center text-white/15 text-xs tracking-[0.18em] uppercase">
+      {message}
+    </div>
+  );
+}
+
+// ─── PAGE COMPONENT ───────────────────────────────────────────────────────────
+
 export default function AdminHomepage() {
+  const supabase = createClient();
 
-  // ── 6. STATE — selected ticket drives the modal ──────────────────────────
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<{ title: string; description: string; price: string } | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<{ title: string; description: string; price: string; trackingNumber: string } | null>(null);
+  const [dbUsers, setDbUsers]     = useState<DBUser[]>([]);
+  const [dbTickets, setDbTickets] = useState<DBTicket[]>([]);
+  const [dbOrders, setDbOrders]   = useState<DBOrder[]>([]);
+  const [dbPlans, setDbPlans]     = useState<DBPlan[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
 
-  // ── 7. HANDLER — called when Resolve is clicked inside the modal ─────────
-  const handleResolve = (ticket: Ticket) => {
-    console.log("Resolved ticket:", ticket);
-    // TODO: call your API here, e.g. await resolveTicket(ticket.id)
-  };
+  const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
+  const [selectedPlan, setSelectedPlan]     = useState<DBPlan | null>(null);
+  const [selectedOrder, setSelectedOrder]   = useState<DBOrder | null>(null);
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true);
+      setError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError("Not authenticated"); setLoading(false); return; }
+
+      const { data: adminCheck, error: adminError } = await supabase
+        .from("users").select("is_admin").eq("user_uuid", user.id).single();
+      if (adminError || !adminCheck || adminCheck.is_admin !== 1) {
+        setError("Access denied"); setLoading(false); return;
+      }
+
+      try {
+        const [usersRes, ticketsRes, ordersRes, plansRes] = await Promise.all([
+          supabase.from("users").select("*"),
+          supabase.from("tickets").select("*"),
+          supabase.from("orders").select("*"),
+          supabase.from("plans").select("*"),
+        ]);
+        if (usersRes.error)   throw new Error(`Users: ${usersRes.error.message}`);
+        if (ticketsRes.error) throw new Error(`Tickets: ${ticketsRes.error.message}`);
+        if (ordersRes.error)  throw new Error(`Orders: ${ordersRes.error.message}`);
+        if (plansRes.error)   throw new Error(`Plans: ${plansRes.error.message}`);
+
+        setDbUsers(usersRes.data ?? []);
+        setDbTickets(ticketsRes.data ?? []);
+        setDbOrders(ordersRes.data ?? []);
+        setDbPlans(plansRes.data ?? []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAll();
+  }, []);
+
+  function getPlanForUser(userUuid: string): DBPlan | undefined {
+    return dbPlans.find((p) => p.user_uuid === userUuid);
+  }
+
+  async function handleResolve(ticket: DBTicket) {
+    const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
+    if (error) { console.error("Failed to resolve ticket:", error.message); return; }
+    setDbTickets((prev) => prev.filter((t) => t.id !== ticket.id));
+    setSelectedTicket(null);
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
+        <div className="text-center space-y-1">
+          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/30 text-base">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-auto">
+    <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto bg-[#080710] min-h-screen">
 
-      {/* ── 8. MODAL — renders on top when a ticket is selected ────────────── */}
+      {/* Modals */}
       {selectedTicket && (
         <TicketModal
           ticket={{
             title: selectedTicket.title,
-            name: selectedTicket.customer,
-            contact: selectedTicket.contact,
-            details: selectedTicket.details,
+            name: selectedTicket.client_name,
+            contact: selectedTicket.contact_details,
+            details: selectedTicket.ticket_details,
           }}
           onClose={() => setSelectedTicket(null)}
           onResolve={() => handleResolve(selectedTicket)}
         />
       )}
-
       {selectedPlan && (
         <PlanModal
-          plan={selectedPlan}
+          plan={{ title: selectedPlan.plan_title, description: selectedPlan.description, price: selectedPlan.price }}
           onClose={() => setSelectedPlan(null)}
         />
       )}
-
       {selectedOrder && (
         <OrderModal
-          order={selectedOrder}
+          order={{ title: selectedOrder.order_title, description: selectedOrder.description, price: selectedOrder.price, trackingNumber: selectedOrder.tracking_number }}
           onClose={() => setSelectedOrder(null)}
         />
       )}
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard label="Customers" value="128" delta="+12%" color="#F97B8B" />
-        <StatCard label="Open Tickets" value="24" delta="+3%" color="#7B93F9" />
-        <StatCard label="Orders" value="57" delta="+8%" color="#8B7B8F" />
-        <StatCard label="Revenue" value="$9.4k" delta="+21%" color="#F97B8B" />
+      {/* Page header */}
+      <div className="pb-4 border-b border-white/[0.06]">
+        <p className="text-xs uppercase tracking-[0.22em] text-white/20 mb-1">FBX Technologies</p>
+        <h1 className="text-white/75 text-2xl font-light tracking-wide">Admin Dashboard</h1>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-3 gap-px bg-white/[0.04]">
+        <StatCard label="Customers"    value={String(dbUsers.length).padStart(2, "0")}   accent="violet" />
+        <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")} accent="pink"   />
+        <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}  accent="slate"  />
       </div>
 
       {/* Customers */}
-      <SectionCard title="Customers" icon={Users} count={customers.length} accentColor="#F97B8B">
-        <div className="hidden sm:grid px-6 py-2 grid-cols-3 text-[10px] uppercase tracking-widest text-[#4a4560] font-bold">
-          <span>Profile</span>
-          <span>Name</span>
-          <span>Plan</span>
-        </div>
-        {customers.map((c) => (
-          <div
-            key={c.id}
-            onClick={() => setSelectedPlan({ title: c.plan, description: "Lorem ipsum...", price: "$9/mo" })}
-            className="px-4 sm:px-6 py-4 flex sm:grid sm:grid-cols-3 items-center gap-3 sm:gap-0 hover:bg-white/[0.03] transition group cursor-pointer"
-          >
-            <Avatar initials={c.initials} color="primary" />
-            <div className="flex-1 sm:flex-none flex items-center gap-2 min-w-0">
-              <span className="font-medium text-sm text-[#e8e0ee] truncate">{c.name}</span>
-              {c.active && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-              )}
-            </div>
-            <div className="flex items-center gap-2 justify-end sm:justify-start">
-              <PlanBadge plan={c.plan} />
-            </div>
-          </div>
-        ))}
+      <SectionCard title="Customers" icon={Users} count={dbUsers.length} accent="violet">
+        <TableHeader cols={["Profile", "Name", "Plan"]} />
+        {loading ? [1,2,3].map(i => <LoadingRow key={i} />) :
+         dbUsers.length === 0 ? <EmptyRow message="No customers" /> :
+         dbUsers.map((u) => {
+           const plan = getPlanForUser(u.user_uuid);
+           return (
+             <div key={u.id} onClick={() => plan && setSelectedPlan(plan)}
+               className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
+               <Avatar initials={getInitials(u.client_name)} color="violet" />
+               <div className="flex items-center gap-2 min-w-0">
+                 <span className="text-white/60 text-sm truncate">{u.client_name}</span>
+                 {u.is_admin && (
+                   <span className="text-[10px] uppercase tracking-widest text-[#9b7fe8] border border-[#9b7fe8]/25 px-1.5 py-0.5 flex-shrink-0">
+                     Admin
+                   </span>
+                 )}
+               </div>
+               <div className="flex items-center gap-1.5">
+                 {plan
+                   ? <><span className="text-sm text-white/35 truncate">{plan.plan_title}</span>
+                       <ExternalLink size={11} className="text-[#9b7fe8] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" /></>
+                   : <span className="text-sm text-white/15">—</span>
+                 }
+               </div>
+             </div>
+           );
+         })}
       </SectionCard>
 
-      {/* Support Tickets */}
-      <SectionCard
-        title="Support Tickets"
-        icon={TicketCheck}
-        count={tickets.length}
-        accentColor="#7B93F9"
-      >
-        <div className="hidden sm:grid px-6 py-2 grid-cols-3 text-[10px] uppercase tracking-widest text-[#4a4560] font-bold">
-          <span>Profile</span>
-          <span>Name</span>
-          <span>Title</span>
-        </div>
-        {tickets.map((t) => (
-          // ── 9. onClick on each ticket row opens the modal ─────────────────
-          <div
-            key={t.id}
-            onClick={() => setSelectedTicket(t)}
-            className="px-4 sm:px-6 py-4 flex sm:grid sm:grid-cols-3 items-center gap-3 sm:gap-0 hover:bg-white/[0.03] transition group cursor-pointer"
-          >
-            <Avatar initials={t.initials} color="secondary" />
-            <span className="flex-1 sm:flex-none font-medium text-sm text-[#e8e0ee] truncate">
-              {t.customer}
-            </span>
-            <div className="flex items-center justify-end sm:justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-sm text-[#c4b8d4] truncate hidden sm:inline">{t.title}</span>
-                <ExternalLink size={12} className="text-[#7B93F9] flex-shrink-0" />
-              </div>
-              <PriorityBadge priority={t.priority} />
-            </div>
-          </div>
-        ))}
+      {/* Tickets */}
+      <SectionCard title="Support Tickets" icon={TicketCheck} count={dbTickets.length} accent="pink">
+        <TableHeader cols={["Profile", "Client", "Title"]} />
+        {loading ? [1,2].map(i => <LoadingRow key={i} />) :
+         dbTickets.length === 0 ? <EmptyRow message="No open tickets" /> :
+         dbTickets.map((t) => (
+           <div key={t.id} onClick={() => setSelectedTicket(t)}
+             className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
+             <Avatar initials={getInitials(t.client_name)} color="pink" />
+             <span className="text-white/60 text-sm truncate">{t.client_name}</span>
+             <div className="flex items-center gap-1.5">
+               <span className="text-sm text-white/35 truncate hidden sm:block">{t.title}</span>
+               <ExternalLink size={11} className="text-[#e8629a] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+             </div>
+           </div>
+         ))}
       </SectionCard>
 
-      {/* Current Orders */}
-      <SectionCard
-        title="Current Orders In Progress"
-        icon={ShoppingCart}
-        count={orders.length}
-        accentColor="#8B7B8F"
-      >
-        <div className="hidden sm:grid px-6 py-2 grid-cols-3 text-[10px] uppercase tracking-widest text-[#4a4560] font-bold">
-          <span>Profile</span>
-          <span>Name</span>
-          <span>Details</span>
-        </div>
-        {orders.map((o) => (
-          <div
-            key={o.id}
-            onClick={() => setSelectedOrder({
-              title: o.details,
-              description: o.description,
-              price: o.price,
-              trackingNumber: o.trackingNumber,
-            })}
-            className="px-4 sm:px-6 py-4 flex sm:grid sm:grid-cols-3 items-center gap-3 sm:gap-0 hover:bg-white/[0.03] transition group cursor-pointer"
-          >
-            <Avatar initials={o.initials} color="accent" />
-            <span className="flex-1 sm:flex-none font-medium text-sm text-[#e8e0ee] truncate">
-              {o.customer}
-            </span>
-            <div className="flex items-center gap-2 min-w-0 justify-end sm:justify-start">
-              <span className="text-sm text-[#c4b8d4] truncate">{o.details}</span>
-              <ExternalLink
-                size={12}
-                className="text-[#8B7B8F] group-hover:text-[#e8e0ee] transition flex-shrink-0"
-              />
-            </div>
-          </div>
-        ))}
+      {/* Orders */}
+      <SectionCard title="Orders in Progress" icon={ShoppingCart} count={dbOrders.length} accent="slate">
+        <TableHeader cols={["Profile", "Order", "Price"]} />
+        {loading ? [1,2].map(i => <LoadingRow key={i} />) :
+         dbOrders.length === 0 ? <EmptyRow message="No active orders" /> :
+         dbOrders.map((o) => {
+           const owner = dbUsers.find((u) => u.user_uuid === o.user_uuid);
+           return (
+             <div key={o.id} onClick={() => setSelectedOrder(o)}
+               className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
+               <Avatar initials={getInitials(owner?.client_name ?? "?")} color="slate" />
+               <span className="text-white/60 text-sm truncate">{o.order_title}</span>
+               <div className="flex items-center gap-1.5">
+                 <span className="text-sm text-white/35">{o.price}</span>
+                 <ExternalLink size={11} className="text-[#7e8fb5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+               </div>
+             </div>
+           );
+         })}
       </SectionCard>
+
     </div>
   );
 }
