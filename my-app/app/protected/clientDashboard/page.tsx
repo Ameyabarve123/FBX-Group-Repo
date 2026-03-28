@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Package,
   TicketCheck,
@@ -13,320 +13,368 @@ import {
   Star,
   Zap,
   Shield,
+  Copy,
+  Check,
+  Trash2,
   LucideIcon,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-interface Plan {
-  tier: string;
+
+interface DBPlan {
+  id: string;
+  plan_title: string;
+  description: string;
   price: string;
-  features: string[];
-  icon: LucideIcon;
-  color: string;
+  user_uuid: string;
 }
 
-interface Shipment {
-  id: number;
-  label: string;
-  eta: string;
-  status: "in_transit" | "delivered" | "processing" | "delayed";
-  trackingNumber: string;
-//   items: number;
+interface DBOrder {
+  id: string;
+  order_title: string;
+  description: string;
+  price: string;
+  tracking_number: string;
+  user_uuid: string;
 }
 
-// ─── DUMMY DATA ───────────────────────────────────────────────────────────────
-const currentPlan: Plan = {
-  tier: "Basic Tier",
-  price: "$3,000",
-  features: ["25 kits/month"],
-  icon: Star,
-  color: "#F97B8B",
+interface DBUser {
+  id: string;
+  client_name: string;
+  is_admin: number;
+  user_uuid: string;
+}
+
+interface DBTicket {
+  id: string;
+  title: string;
+  contact_details: string;
+  ticket_details: string;
+  client_name: string;
+  user_uuid: string;
+  resolved: number;
+}
+
+// ─── ACCENT CONFIGS ───────────────────────────────────────────────────────────
+
+const ACCENTS = {
+  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20", hex: "#e8629a" },
+  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20", hex: "#9b7fe8" },
+  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10", border: "border-[#7e8fb5]/20", hex: "#7e8fb5" },
 };
 
-const shipments: Shipment[] = [
-  {
-    id: 1,
-    label: "25 kits",
-    eta: "12:00 – 3:00 PM, Jan 1",
-    status: "in_transit",
-    trackingNumber: "1Z999AA10123456784",
+type Status = "in_transit" | "delivered" | "processing" | "delayed";
 
-  },
-];
-
-// ─── ALL PLANS (for upgrade modal) ───────────────────────────────────────────
-const allPlans = [
-  {
-    tier: "Basic Tier",
-    price: "$3,000",
-    color: "#F97B8B",
-    icon: Star,
-    features: ["25 kits/month"],
-  },
-  {
-    tier: "Pro Tier",
-    price: "$6,000",
-    color: "#7B93F9",
-    icon: Zap,
-    features: ["50 kits/month"],
-  },
-];
-
-// ─── STATUS CONFIG ────────────────────────────────────────────────────────────
-const statusConfig = {
-  in_transit: { label: "In Transit", color: "#7B93F9", bg: "#7B93F9", icon: Truck },
-  delivered:  { label: "Delivered",  color: "#4ade80", bg: "#4ade80", icon: CheckCircle2 },
-  processing: { label: "Processing", color: "#F97B8B", bg: "#F97B8B", icon: Clock },
-  delayed:    { label: "Delayed",    color: "#fb923c", bg: "#fb923c", icon: AlertCircle },
+const STATUS_CONFIG: Record<Status, { label: string; color: string; icon: LucideIcon }> = {
+  in_transit: { label: "In Transit", color: "violet", icon: Truck },
+  delivered:  { label: "Delivered",  color: "slate",  icon: CheckCircle2 },
+  processing: { label: "Processing", color: "pink",   icon: Clock },
+  delayed:    { label: "Delayed",    color: "pink",   icon: AlertCircle },
 };
 
-// ─── PLAN ICON MAP ────────────────────────────────────────────────────────────
-const tierIcons: Record<string, { icon: LucideIcon; color: string }> = {
-  "Basic Tier":      { icon: Star,   color: "#F97B8B" },
-  "Pro Tier":        { icon: Zap,    color: "#7B93F9" },
-  "Enterprise Tier": { icon: Shield, color: "#8B7B8F" },
+const TIER_ICONS: Record<string, { icon: LucideIcon; accent: "pink" | "violet" | "slate" }> = {
+  "Basic Tier":      { icon: Star,   accent: "pink"   },
+  "Pro Tier":        { icon: Zap,    accent: "violet" },
+  "Enterprise Tier": { icon: Shield, accent: "slate"  },
 };
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+function getInitials(name: string): string {
+  if (!name) return "?";
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function deriveStatus(order: DBOrder): Status {
+  if (!order.tracking_number) return "processing";
+  return "in_transit";
+}
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
-function SectionCard({
-  title,
-  icon: Icon,
-  accentColor = "#F97B8B",
-  children,
-}: {
-  title: string;
-  icon: LucideIcon;
-  accentColor?: string;
-  children: React.ReactNode;
-}) {
+
+function Avatar({ initials, accent = "pink" }: { initials: string; accent?: "pink" | "violet" | "slate" }) {
+  const styles = {
+    pink:   "bg-[#e8629a]/10 text-[#e8629a] ring-1 ring-[#e8629a]/25",
+    violet: "bg-[#9b7fe8]/10 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/25",
+    slate:  "bg-[#7e8fb5]/10 text-[#7e8fb5] ring-1 ring-[#7e8fb5]/25",
+  };
   return (
-    <div className="rounded-2xl bg-[#1e1c2e] border border-white/5 overflow-hidden shadow-xl">
-      <div className="px-4 sm:px-6 py-4 flex items-center gap-3 border-b border-white/5">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: `${accentColor}22` }}
-        >
-          <Icon size={16} style={{ color: accentColor }} />
+    <div className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 ${styles[accent]}`}>
+      {initials}
+    </div>
+  );
+}
+
+function SectionCard({
+  title, icon: Icon, count, accent = "violet", children,
+}: {
+  title: string; icon: LucideIcon; count?: number; accent?: "pink" | "violet" | "slate"; children: React.ReactNode;
+}) {
+  const a = ACCENTS[accent];
+  return (
+    <div className="bg-[#0d0c14] border border-white/[0.06]">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
+        <div className="flex items-center gap-3">
+          <Icon size={15} className={a.text} />
+          <h2 className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">{title}</h2>
         </div>
-        <h2 className="text-[#e8e0ee] font-semibold text-sm sm:text-base tracking-wide">{title}</h2>
+        {count !== undefined && (
+          <span className={`text-xs font-bold px-2 py-0.5 ${a.bg} ${a.text} tracking-wider`}>
+            {String(count).padStart(2, "0")}
+          </span>
+        )}
       </div>
       <div>{children}</div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: Shipment["status"] }) {
-  const cfg = statusConfig[status];
+function TableHeader({ cols }: { cols: string[] }) {
+  return (
+    <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
+      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
+      {cols.map((c) => (
+        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
+      ))}
+    </div>
+  );
+}
+
+function LoadingRow() {
+  return (
+    <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.04]">
+      <div className="w-10 h-10 rounded-md bg-white/5 flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-white/5 rounded w-1/3" />
+        <div className="h-2.5 bg-white/5 rounded w-1/5" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyRow({ message }: { message: string }) {
+  return (
+    <div className="px-5 py-8 text-center text-white/15 text-xs tracking-[0.18em] uppercase">{message}</div>
+  );
+}
+
+function StatusBadge({ status }: { status: Status }) {
+  const cfg = STATUS_CONFIG[status];
+  const a = ACCENTS[cfg.color as "pink" | "violet" | "slate"];
   const StatusIcon = cfg.icon;
   return (
-    <span
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap"
-      style={{ backgroundColor: `${cfg.bg}20`, color: cfg.color, borderColor: `${cfg.bg}30` }}
-    >
-      <StatusIcon size={11} />
-      {cfg.label}
+    <span className={`flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${a.bg} ${a.text} border ${a.border}`}>
+      <StatusIcon size={10} />{cfg.label}
     </span>
   );
 }
 
-// ─── UPGRADE MODAL ────────────────────────────────────────────────────────────
-function UpgradeModal({ currentTier, onClose }: { currentTier: string; onClose: () => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
+function TrackingNumber({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} className="flex items-center gap-1.5 group/copy" title="Copy tracking number">
+      <span className="text-xs text-white/25 font-mono truncate max-w-[140px]">{value}</span>
+      {copied
+        ? <Check size={11} className="text-[#9b7fe8] flex-shrink-0" />
+        : <Copy size={11} className="text-white/20 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+      }
+    </button>
+  );
+}
 
-  if (confirmed) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center gap-4 text-center">
-          <div className="w-14 h-14 rounded-full bg-emerald-400/20 flex items-center justify-center">
-            <CheckCircle2 size={28} className="text-emerald-400" />
+// ─── ORDER MODAL ──────────────────────────────────────────────────────────────
+
+function OrderModal({ order, onClose }: { order: DBOrder; onClose: () => void }) {
+  const status = deriveStatus(order);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Package size={14} className="text-[#7e8fb5]" />
+            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Order Detail</span>
           </div>
-          <h3 className="text-[#e8e0ee] font-semibold text-lg">Plan Upgraded!</h3>
-          <p className="text-[#8b8099] text-sm">
-            You're now on the <span className="text-[#e8e0ee] font-medium">{selected}</span>.
-          </p>
-          <button
-            onClick={onClose}
-            className="mt-2 px-6 py-2.5 rounded-xl bg-[#F97B8B] text-[#1a1a2e] font-semibold text-sm hover:bg-[#f96070] transition"
-          >
-            Done
-          </button>
+          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
         </div>
+        <div className="space-y-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Order</p>
+            <p className="text-white/70 text-sm">{order.order_title}</p>
+          </div>
+          {order.description && (
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Description</p>
+              <p className="text-white/40 text-sm leading-relaxed">{order.description}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Price</p>
+              <p className="text-[#9b7fe8] text-sm font-medium">{order.price}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Status</p>
+              <StatusBadge status={status} />
+            </div>
+          </div>
+          {order.tracking_number && (
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Tracking Number</p>
+              <TrackingNumber value={order.tracking_number} />
+            </div>
+          )}
+        </div>
+        <button onClick={onClose} className="w-full py-2.5 border border-white/[0.06] text-white/30 text-xs uppercase tracking-[0.18em] hover:border-white/10 hover:text-white/50 transition">
+          Close
+        </button>
       </div>
-    );
+    </div>
+  );
+}
+
+// ─── TICKET DETAIL MODAL ──────────────────────────────────────────────────────
+
+function TicketDetailModal({
+  ticket, onClose, onResolve, onDelete,
+}: {
+  ticket: DBTicket;
+  onClose: () => void;
+  onResolve: (t: DBTicket) => Promise<void>;
+  onDelete: (t: DBTicket) => Promise<void>;
+}) {
+  const [working, setWorking] = useState<"resolve" | "delete" | null>(null);
+  const isResolved = ticket.resolved === 1;
+
+  async function handle(action: "resolve" | "delete") {
+    setWorking(action);
+    if (action === "resolve") await onResolve(ticket);
+    else await onDelete(ticket);
+    setWorking(null);
+    onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#F97B8B]/20 flex items-center justify-center">
-              <Zap size={16} className="text-[#F97B8B]" />
-            </div>
-            <h3 className="text-[#e8e0ee] font-semibold text-base">Upgrade Plan</h3>
+            <TicketCheck size={14} className={isResolved ? "text-[#7e8fb5]" : "text-[#e8629a]"} />
+            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Ticket Detail</span>
           </div>
-          <button onClick={onClose} className="text-[#8b8099] hover:text-[#e8e0ee] transition text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {allPlans.map((plan) => {
-            const PlanIcon = plan.icon;
-            const isCurrent = plan.tier === currentTier;
-            const isSelected = selected === plan.tier;
-            return (
-              <button
-                key={plan.tier}
-                disabled={isCurrent}
-                onClick={() => setSelected(plan.tier)}
-                className={`w-full text-left rounded-xl p-4 border transition flex items-start gap-4 ${
-                  isCurrent
-                    ? "opacity-40 cursor-not-allowed border-white/5 bg-white/[0.02]"
-                    : isSelected
-                    ? "bg-white/[0.05]"
-                    : "border-white/5 bg-[#161428] hover:bg-white/[0.04] hover:border-white/10"
-                }`}
-                style={isSelected ? { borderColor: `${plan.color}50` } : {}}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${plan.color}22` }}
-                >
-                  <PlanIcon size={18} style={{ color: plan.color }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-[#e8e0ee]">{plan.tier}</span>
-                      {isCurrent && (
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-[#4a4560]">Current</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <span className="font-bold" style={{ color: plan.color }}>{plan.price}</span>
-                      <span className="text-[#8b8099] text-xs">/mo</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                    {plan.features.map((f) => (
-                      <span key={f} className="text-xs text-[#8b8099]">{f}</span>
-                    ))}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        <div className="space-y-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Title</p>
+            <p className="text-white/70 text-sm">{ticket.title}</p>
+          </div>
+          {ticket.contact_details && (
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Contact</p>
+              <p className="text-white/40 text-sm">{ticket.contact_details}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Details</p>
+            <p className="text-white/40 text-sm leading-relaxed">{ticket.ticket_details}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Status</p>
+            {isResolved ? (
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#7e8fb5]">
+                <CheckCircle2 size={10} /> Resolved
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#e8629a]">
+                <Clock size={10} /> Open
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-1">
+          {/* Hard delete — always available */}
           <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-[#8b8099] text-sm font-medium hover:bg-white/5 transition"
+            onClick={() => handle("delete")}
+            disabled={!!working}
+            className="flex items-center justify-center gap-1.5 flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Cancel
+            <Trash2 size={11} />
+            {working === "delete" ? "Deleting…" : "Delete"}
           </button>
-          <button
-            onClick={() => selected && setConfirmed(true)}
-            disabled={!selected}
-            className="flex-1 py-2.5 rounded-xl bg-[#F97B8B] text-[#1a1a2e] font-semibold text-sm hover:bg-[#f96070] transition disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Confirm Upgrade
-          </button>
+
+          {/* Resolve — only for open tickets */}
+          {!isResolved && (
+            <button
+              onClick={() => handle("resolve")}
+              disabled={!!working}
+              className="flex items-center justify-center gap-1.5 flex-1 py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <CheckCircle2 size={11} />
+              {working === "resolve" ? "Resolving…" : "Resolve"}
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── CANCEL MODAL ─────────────────────────────────────────────────────────────
-function CancelModal({ tier, onClose }: { tier: string; onClose: () => void }) {
-  const [cancelled, setCancelled] = useState(false);
+// ─── SUBMIT TICKET MODAL ──────────────────────────────────────────────────────
 
-  if (cancelled) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
-          <div className="w-14 h-14 rounded-full bg-[#8b8099]/20 flex items-center justify-center">
-            <CheckCircle2 size={28} className="text-[#8b8099]" />
-          </div>
-          <h3 className="text-[#e8e0ee] font-semibold text-lg">Plan Cancelled</h3>
-          <p className="text-[#8b8099] text-sm">
-            Your plan has been cancelled. You'll retain access until the end of your billing period.
-          </p>
-          <button
-            onClick={onClose}
-            className="mt-2 px-6 py-2.5 rounded-xl bg-white/10 text-[#e8e0ee] font-semibold text-sm hover:bg-white/15 transition"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
+function SubmitTicketModal({
+  userUuid, clientName, onClose, onSubmitted,
+}: {
+  userUuid: string;
+  clientName: string;
+  onClose: () => void;
+  onSubmitted: (ticket: DBTicket) => void;
+}) {
+  const supabase = createClient();
+  const [title, setTitle]     = useState("");
+  const [contact, setContact] = useState("");
+  const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    if (!title || !details) return;
+    setSubmitting(true);
+    setErr(null);
+    const { data, error } = await supabase.from("tickets").insert({
+      title,
+      contact_details: contact,
+      ticket_details: details,
+      client_name: clientName,
+      user_uuid: userUuid,
+      resolved: 0,
+    }).select().single();
+    setSubmitting(false);
+    if (error) { setErr(error.message); return; }
+    if (data) onSubmitted(data as DBTicket);
+    setSubmitted(true);
   }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-              <AlertCircle size={16} className="text-red-400" />
-            </div>
-            <h3 className="text-[#e8e0ee] font-semibold text-base">Cancel Plan</h3>
-          </div>
-          <button onClick={onClose} className="text-[#8b8099] hover:text-[#e8e0ee] transition text-xl leading-none">×</button>
-        </div>
-
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <p className="text-sm text-[#e8e0ee] font-medium">Are you sure you want to cancel?</p>
-          <p className="text-xs text-[#8b8099] mt-1">
-            You're about to cancel your <span className="text-[#e8e0ee]">{tier}</span>. You'll lose access to all plan features at the end of your current billing cycle.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-[#8b8099] text-sm font-medium hover:bg-white/5 transition"
-          >
-            Keep Plan
-          </button>
-          <button
-            onClick={() => setCancelled(true)}
-            className="flex-1 py-2.5 rounded-xl bg-red-500/20 text-red-400 font-semibold text-sm hover:bg-red-500/30 transition border border-red-500/20"
-          >
-            Yes, Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── TICKET MODAL ─────────────────────────────────────────────────────────────
-function TicketSubmitModal({ onClose }: { onClose: () => void }) {
-  const [submitted, setSubmitted] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
 
   if (submitted) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center gap-4 text-center">
-          <div className="w-14 h-14 rounded-full bg-emerald-400/20 flex items-center justify-center">
-            <CheckCircle2 size={28} className="text-emerald-400" />
-          </div>
-          <h3 className="text-[#e8e0ee] font-semibold text-lg">Ticket Submitted!</h3>
-          <p className="text-[#8b8099] text-sm">We'll get back to you within 24 hours.</p>
-          <button
-            onClick={onClose}
-            className="mt-2 px-6 py-2.5 rounded-xl bg-[#F97B8B] text-[#1a1a2e] font-semibold text-sm hover:bg-[#f96070] transition"
-          >
+        <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-8 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
+          <CheckCircle2 size={28} className="text-[#9b7fe8]" />
+          <p className="text-white/60 text-xs uppercase tracking-[0.18em]">Ticket Submitted</p>
+          <p className="text-white/25 text-xs">We'll get back to you within 24 hours.</p>
+          <button onClick={onClose} className="mt-2 px-6 py-2 border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] hover:border-white/15 hover:text-white/60 transition">
             Done
           </button>
         </div>
@@ -336,53 +384,52 @@ function TicketSubmitModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#7B93F9]/20 flex items-center justify-center">
-              <TicketCheck size={16} className="text-[#7B93F9]" />
+            <TicketCheck size={14} className="text-[#e8629a]" />
+            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Submit Ticket</span>
+          </div>
+          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
+        </div>
+        <div className="space-y-3">
+          {[
+            { label: "Title",   value: title,   setter: setTitle,   placeholder: "e.g. Missing item in order" },
+            { label: "Contact", value: contact, setter: setContact, placeholder: "Email or phone" },
+          ].map(({ label, value, setter, placeholder }) => (
+            <div key={label}>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
+              <input
+                value={value}
+                onChange={(e) => setter(e.target.value)}
+                placeholder={placeholder}
+                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition"
+              />
             </div>
-            <h3 className="text-[#e8e0ee] font-semibold text-base">Submit Help Ticket</h3>
-          </div>
-          <button onClick={onClose} className="text-[#8b8099] hover:text-[#e8e0ee] transition text-xl leading-none">×</button>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase tracking-widest font-bold text-[#4a4560]">Subject</label>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Missing item in order"
-              className="bg-[#161428] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#e8e0ee] placeholder:text-[#4a4560] outline-none focus:border-[#7B93F9]/50 transition"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase tracking-widest font-bold text-[#4a4560]">Message</label>
+          ))}
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">Details</p>
             <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
               rows={4}
-              placeholder="Describe your issue in detail..."
-              className="bg-[#161428] border border-white/10 rounded-xl px-4 py-3 text-sm text-[#e8e0ee] placeholder:text-[#4a4560] outline-none focus:border-[#7B93F9]/50 transition resize-none"
+              placeholder="Describe your issue..."
+              className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition resize-none"
             />
           </div>
+          {err && <p className="text-[#e8629a] text-xs">{err}</p>}
         </div>
-
-        <div className="flex gap-3 pt-1">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-[#8b8099] text-sm font-medium hover:bg-white/5 transition"
-          >
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-white/10 transition">
             Cancel
           </button>
           <button
-            onClick={() => setSubmitted(true)}
-            disabled={!subject || !message}
-            className="flex-1 py-2.5 rounded-xl bg-[#F97B8B] text-[#1a1a2e] font-semibold text-sm hover:bg-[#f96070] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={handleSubmit}
+            disabled={!title || !details || submitting}
+            className="flex-1 py-2.5 bg-[#e8629a]/10 border border-[#e8629a]/20 text-[#e8629a] text-xs uppercase tracking-[0.18em] hover:bg-[#e8629a]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Submit
+            {submitting ? "Submitting…" : "Submit"}
           </button>
         </div>
       </div>
@@ -390,29 +437,41 @@ function TicketSubmitModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── SHIPMENT DETAIL MODAL ────────────────────────────────────────────────────
-function ShipmentModal({ shipment, onClose }: { shipment: Shipment; onClose: () => void }) {
+// ─── PLAN MODAL ───────────────────────────────────────────────────────────────
+
+function PlanModal({ plan, onClose }: { plan: DBPlan; onClose: () => void }) {
+  const tierKey = plan.plan_title ?? "Basic Tier";
+  const cfg = TIER_ICONS[tierKey] ?? TIER_ICONS["Basic Tier"];
+  const TierIcon = cfg.icon;
+  const a = ACCENTS[cfg.accent];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0d0b1a]/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#1e1c2e] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#8B7B8F]/20 flex items-center justify-center">
-              <Package size={16} className="text-[#8B7B8F]" />
-            </div>
-            <h3 className="text-[#e8e0ee] font-semibold text-base">Current Location</h3>
+            <TierIcon size={14} className={a.text} />
+            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Plan Details</span>
           </div>
-          <button onClick={onClose} className="text-[#8b8099] hover:text-[#e8e0ee] transition text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
         </div>
-        <div>
-            <p>Placeholder for Shipping API</p>
+        <div className="space-y-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Tier</p>
+            <p className={`text-sm font-medium ${a.text}`}>{plan.plan_title}</p>
+          </div>
+          {plan.description && (
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Description</p>
+              <p className="text-white/40 text-sm leading-relaxed">{plan.description}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Price</p>
+            <p className={`text-2xl font-light ${a.text} tabular-nums`}>{plan.price}<span className="text-xs text-white/20 ml-1">/mo</span></p>
+          </div>
         </div>
-
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-[#8B7B8F]/20 text-[#8B7B8F] font-semibold text-sm hover:bg-[#8B7B8F]/30 transition border border-[#8B7B8F]/20"
-        >
+        <button onClick={onClose} className="w-full py-2.5 border border-white/[0.06] text-white/30 text-xs uppercase tracking-[0.18em] hover:border-white/10 hover:text-white/50 transition">
           Close
         </button>
       </div>
@@ -421,126 +480,294 @@ function ShipmentModal({ shipment, onClose }: { shipment: Shipment; onClose: () 
 }
 
 // ─── PAGE COMPONENT ───────────────────────────────────────────────────────────
-export default function ClientDashboard() {
-  const [ticketOpen, setTicketOpen] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
 
-  const tierCfg = tierIcons[currentPlan.tier] ?? tierIcons["Basic Tier"];
-  const TierIcon = tierCfg.icon;
+export default function ClientDashboard() {
+  const supabase = createClient();
+
+  const [dbUser, setDbUser]                   = useState<DBUser | null>(null);
+  const [dbPlan, setDbPlan]                   = useState<DBPlan | null>(null);
+  const [dbOrders, setDbOrders]               = useState<DBOrder[]>([]);
+  const [openTickets, setOpenTickets]         = useState<DBTicket[]>([]);
+  const [resolvedTickets, setResolvedTickets] = useState<DBTicket[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [error, setError]                     = useState<string | null>(null);
+
+  const [submitOpen, setSubmitOpen]         = useState(false);
+  const [selectedOrder, setSelectedOrder]   = useState<DBOrder | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
+  const [planOpen, setPlanOpen]             = useState(false);
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true);
+      setError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError("Not authenticated"); setLoading(false); return; }
+
+      try {
+        const [userRes, planRes, ordersRes, openRes, resolvedRes] = await Promise.all([
+          supabase.from("users").select("*").eq("user_uuid", user.id).limit(1).maybeSingle(),
+          supabase.from("plans").select("*").eq("user_uuid", user.id).maybeSingle(),
+          supabase.from("orders").select("*").eq("user_uuid", user.id),
+          supabase.from("tickets").select("*").eq("user_uuid", user.id).eq("resolved", 0),
+          supabase.from("tickets").select("*").eq("user_uuid", user.id).eq("resolved", 1),
+        ]);
+        if (userRes.error)     throw new Error(`User: ${userRes.error.message}`);
+        if (ordersRes.error)   throw new Error(`Orders: ${ordersRes.error.message}`);
+        if (openRes.error)     throw new Error(`Tickets: ${openRes.error.message}`);
+        if (resolvedRes.error) throw new Error(`Resolved: ${resolvedRes.error.message}`);
+
+        setDbUser(userRes.data ?? null);
+        setDbPlan(planRes.data ?? null);
+        setDbOrders(ordersRes.data ?? []);
+        setOpenTickets(openRes.data ?? []);
+        setResolvedTickets(resolvedRes.data ?? []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAll();
+  }, []);
+
+  // Mark resolved=1 — stays visible until cron job hard-deletes nightly
+  async function handleResolve(ticket: DBTicket) {
+    const { error } = await supabase.from("tickets").update({ resolved: 1 }).eq("id", ticket.id);
+    if (error) { console.error(error.message); return; }
+    setOpenTickets((prev) => prev.filter((t) => t.id !== ticket.id));
+    setResolvedTickets((prev) => [{ ...ticket, resolved: 1 }, ...prev]);
+  }
+
+  // Hard delete — removes the row entirely right now
+  async function handleDelete(ticket: DBTicket) {
+    const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
+    if (error) { console.error(error.message); return; }
+    setOpenTickets((prev) => prev.filter((t) => t.id !== ticket.id));
+    setResolvedTickets((prev) => prev.filter((t) => t.id !== ticket.id));
+  }
+
+  // Optimistically add new ticket to open list without refetch
+  function handleTicketSubmitted(ticket: DBTicket) {
+    setOpenTickets((prev) => [ticket, ...prev]);
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
+        <div className="text-center space-y-1">
+          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/30 text-base">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tierKey   = dbPlan?.plan_title ?? "Basic Tier";
+  const tierCfg   = TIER_ICONS[tierKey] ?? TIER_ICONS["Basic Tier"];
+  const TierIcon  = tierCfg.icon;
+  const planAccent = ACCENTS[tierCfg.accent];
 
   return (
-    <div className="flex-1 px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-auto">
+    <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto">
+
       {/* Modals */}
-      {ticketOpen  && <TicketSubmitModal onClose={() => setTicketOpen(false)} />}
-      {upgradeOpen && <UpgradeModal currentTier={currentPlan.tier} onClose={() => setUpgradeOpen(false)} />}
-      {cancelOpen  && <CancelModal tier={currentPlan.tier} onClose={() => setCancelOpen(false)} />}
-      {selectedShipment && (
-        <ShipmentModal shipment={selectedShipment} onClose={() => setSelectedShipment(null)} />
+      {submitOpen && dbUser && (
+        <SubmitTicketModal
+          userUuid={dbUser.user_uuid}
+          clientName={dbUser.client_name}
+          onClose={() => setSubmitOpen(false)}
+          onSubmitted={handleTicketSubmitted}
+        />
+      )}
+      {selectedTicket && (
+        <TicketDetailModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onResolve={handleResolve}
+          onDelete={handleDelete}
+        />
+      )}
+      {selectedOrder && (
+        <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      )}
+      {planOpen && dbPlan && (
+        <PlanModal plan={dbPlan} onClose={() => setPlanOpen(false)} />
       )}
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[#e8e0ee] text-2xl sm:text-3xl font-bold tracking-tight">Client Dashboard</h1>
-        <p className="text-[#8b8099] text-sm mt-1">Welcome back, Customer1</p>
+      {/* Page header */}
+      <div className="pb-4 border-b border-white/[0.06]">
+        <p className="text-xs uppercase tracking-[0.22em] text-white/20 mb-1">FBX Technologies</p>
+        <h1 className="text-white/75 text-2xl font-light tracking-wide">
+          {loading ? "Dashboard" : `Welcome, ${dbUser?.client_name ?? "Client"}`}
+        </h1>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
+        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
+          <div className={`absolute inset-x-0 top-0 h-px ${planAccent.bg}`} />
+          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Current Plan</p>
+          {loading
+            ? <div className="h-8 bg-white/5 rounded w-24 animate-pulse" />
+            : <p className={`text-2xl font-light ${planAccent.text} tabular-nums`}>{dbPlan?.plan_title ?? "—"}</p>
+          }
+        </div>
+        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
+          <div className="absolute inset-x-0 top-0 h-px bg-[#7e8fb5]/10" />
+          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Active Orders</p>
+          {loading
+            ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
+            : <p className="text-4xl font-light text-[#7e8fb5] tabular-nums">{String(dbOrders.length).padStart(2, "0")}</p>
+          }
+        </div>
       </div>
 
       {/* Current Plan */}
-      <SectionCard title="Current Plan" icon={Star} accentColor="#F97B8B">
-        <div className="hidden sm:grid px-6 py-2 grid-cols-3 text-[10px] uppercase tracking-widest text-[#4a4560] font-bold border-b border-white/5">
-          <span>Current Tier</span>
-          <span />
-          <span className="text-right">Price</span>
-        </div>
-
-        <div className="px-4 sm:px-6 py-4 flex sm:grid sm:grid-cols-3 items-center gap-4">
-          <div className="flex items-center gap-3 col-span-1">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
-              style={{ backgroundColor: `${tierCfg.color}22` }}
-            >
-              <TierIcon size={22} style={{ color: tierCfg.color }} />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold text-[#e8e0ee]">{currentPlan.tier}</span>
-                {/* <ExternalLink size={12} className="text-[#F97B8B]" /> */}
+      <SectionCard title="Your Plan" icon={TierIcon} accent={tierCfg.accent}>
+        {loading ? <LoadingRow /> : !dbPlan ? <EmptyRow message="No plan assigned" /> : (
+          <div
+            onClick={() => setPlanOpen(true)}
+            className="px-5 py-4 flex items-center justify-between gap-3 hover:bg-white/[0.015] transition-colors cursor-pointer group border-b border-white/[0.04]"
+          >
+            <div className="flex items-center gap-4">
+              <Avatar initials={getInitials(dbPlan.plan_title)} accent={tierCfg.accent} />
+              <div>
+                <p className={`text-sm font-medium ${planAccent.text}`}>{dbPlan.plan_title}</p>
+                {dbPlan.description && (
+                  <p className="text-xs text-white/25 mt-0.5 truncate max-w-[200px]">{dbPlan.description}</p>
+                )}
               </div>
-              {currentPlan.features.map((f) => (
-                <span key={f} className="text-xs text-[#8b8099]">{f}</span>
-              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 text-sm tabular-nums">{dbPlan.price}<span className="text-white/20 text-xs">/mo</span></span>
+              <ExternalLink size={11} className={`${planAccent.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
             </div>
           </div>
-
-          <div />
-
-          <div className="hidden sm:flex items-center justify-end">
-            <span className="text-[#e8e0ee] font-bold text-lg">{currentPlan.price}</span>
-            <span className="text-[#8b8099] text-xs ml-1">/mo</span>
+        )}
+        <div className="px-5 py-3 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white/15">Manage</span>
+          <div className="flex items-center gap-4">
+            <button className="text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-[#e8629a] transition">Cancel</button>
+            <button className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-[#9b7fe8] transition">
+              Upgrade <ChevronRight size={10} />
+            </button>
           </div>
         </div>
+      </SectionCard>
 
-        {/* Plan actions */}
-        <div className="px-4 sm:px-6 py-3 border-t border-white/5 flex items-center justify-between">
+      {/* Orders & Tracking */}
+      <SectionCard title="Orders & Tracking" icon={Package} count={dbOrders.length} accent="slate">
+        <TableHeader cols={["Order", "Tracking", "Status"]} />
+        {loading
+          ? [1, 2].map((i) => <LoadingRow key={i} />)
+          : dbOrders.length === 0
+          ? <EmptyRow message="No active orders" />
+          : dbOrders.map((o) => {
+              const status = deriveStatus(o);
+              return (
+                <div
+                  key={o.id}
+                  onClick={() => setSelectedOrder(o)}
+                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar initials={getInitials(o.order_title)} accent="slate" />
+                    <div className="min-w-0">
+                      <p className="text-white/60 text-sm truncate">{o.order_title}</p>
+                      <p className="text-white/20 text-xs">{o.price}</p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex items-center">
+                    {o.tracking_number
+                      ? <TrackingNumber value={o.tracking_number} />
+                      : <span className="text-white/15 text-xs">—</span>
+                    }
+                  </div>
+                  <div className="flex items-center gap-2 justify-end sm:justify-start">
+                    <StatusBadge status={status} />
+                    <ExternalLink size={11} className="text-[#7e8fb5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              );
+            })
+        }
+      </SectionCard>
+
+      {/* Support — open new ticket */}
+      <SectionCard title="Support" icon={TicketCheck} accent="pink">
+        <div className="px-5 py-5 flex items-center justify-between">
+          <div>
+            <p className="text-white/40 text-sm">Need help with something?</p>
+            <p className="text-white/20 text-xs mt-0.5">We typically respond within 24 hours.</p>
+          </div>
           <button
-            onClick={() => setCancelOpen(true)}
-            className="text-xs font-semibold text-[#8b8099] hover:text-red-400 transition"
+            onClick={() => setSubmitOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#e8629a]/10 border border-[#e8629a]/20 text-[#e8629a] text-[10px] uppercase tracking-[0.18em] hover:bg-[#e8629a]/15 transition flex-shrink-0"
           >
-            Cancel Plan
-          </button>
-          <button
-            onClick={() => setUpgradeOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#F97B8B] hover:text-[#f96070] transition"
-          >
-            Upgrade Plan <ChevronRight size={13} />
+            <TicketCheck size={12} />
+            Open Ticket
           </button>
         </div>
       </SectionCard>
 
-      {/* Track Shipments */}
-      <SectionCard title="Track Shipments" icon={Package} accentColor="#8B7B8F">
-        <div className="hidden sm:grid px-6 py-2 grid-cols-3 text-[10px] uppercase tracking-widest text-[#4a4560] font-bold border-b border-white/5">
-          <span>Shipment</span>
-          <span>ETA</span>
-          <span>Status</span>
-        </div>
-
-        {shipments.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => setSelectedShipment(s)}
-            className="px-4 sm:px-6 py-4 flex sm:grid sm:grid-cols-3 items-center gap-3 sm:gap-0 hover:bg-white/[0.03] transition group cursor-pointer border-t border-white/5 first:border-t-0"
-          >
-            <div className="flex items-center gap-3 flex-1 sm:flex-none min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-[#8B7B8F]/20 flex items-center justify-center flex-shrink-0">
-                <Package size={16} className="text-[#8B7B8F]" />
-              </div>
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-[#e8e0ee] truncate">{s.label}</span>
-                  <ExternalLink size={11} className="text-[#8B7B8F] flex-shrink-0 opacity-0 group-hover:opacity-100 transition" />
+      {/* Open tickets — click any row to view details, resolve, or delete */}
+      <SectionCard title="My Tickets" icon={TicketCheck} count={openTickets.length} accent="pink">
+        <TableHeader cols={["Title", "Details", "Status"]} />
+        {loading
+          ? [1, 2].map((i) => <LoadingRow key={i} />)
+          : openTickets.length === 0
+          ? <EmptyRow message="No open tickets" />
+          : openTickets.map((t) => (
+              <div
+                key={t.id}
+                onClick={() => setSelectedTicket(t)}
+                className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar initials={getInitials(t.title)} accent="pink" />
+                  <p className="text-white/60 text-sm truncate">{t.title}</p>
+                </div>
+                <p className="hidden sm:block text-white/25 text-xs truncate">{t.ticket_details}</p>
+                <div className="flex items-center gap-1.5 justify-end sm:justify-start">
+                  <Clock size={10} className="text-[#e8629a]" />
+                  <span className="text-[10px] uppercase tracking-widest text-[#e8629a]/60">Open</span>
+                  <ExternalLink size={11} className="text-[#e8629a] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                 </div>
               </div>
-            </div>
-            <span className="hidden sm:block text-sm text-[#c4b8d4]">{s.eta}</span>
-            <div className="flex items-center justify-end sm:justify-start">
-              <StatusBadge status={s.status} />
-            </div>
-          </div>
-        ))}
+            ))
+        }
       </SectionCard>
 
-      {/* Submit Help Ticket */}
-      <div className="flex justify-center pb-2">
-        <button
-          onClick={() => setTicketOpen(true)}
-          className="flex items-center gap-2 px-8 py-3 rounded-xl bg-[#1e1c2e] border border-white/10 text-[#e8e0ee] text-sm font-semibold hover:bg-white/[0.06] hover:border-[#7B93F9]/40 transition shadow-lg"
-        >
-          <TicketCheck size={15} className="text-[#7B93F9]" />
-          Submit Help Ticket
-        </button>
-      </div>
+      {/* Resolved tickets — only rendered if any exist */}
+      {(loading || resolvedTickets.length > 0) && (
+        <SectionCard title="Resolved Tickets" icon={CheckCircle2} count={resolvedTickets.length} accent="slate">
+          <TableHeader cols={["Title", "Details", "Status"]} />
+          {loading
+            ? [1].map((i) => <LoadingRow key={i} />)
+            : resolvedTickets.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => setSelectedTicket(t)}
+                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group opacity-55"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar initials={getInitials(t.title)} accent="slate" />
+                    <p className="text-white/35 text-sm truncate line-through">{t.title}</p>
+                  </div>
+                  <p className="hidden sm:block text-white/15 text-xs truncate">{t.ticket_details}</p>
+                  <div className="flex items-center gap-1.5 justify-end sm:justify-start">
+                    <CheckCircle2 size={10} className="text-[#7e8fb5]" />
+                    <span className="text-[10px] uppercase tracking-widest text-[#7e8fb5]">Resolved</span>
+                    <ExternalLink size={11} className="text-[#7e8fb5] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                  </div>
+                </div>
+              ))
+          }
+        </SectionCard>
+      )}
+
     </div>
   );
 }
