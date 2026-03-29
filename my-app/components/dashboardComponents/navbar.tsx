@@ -115,9 +115,6 @@ export default function Navbar({ activePage = "dashboard" }: { activePage?: stri
         {/* Nav links */}
         <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
           <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
-          <NavItem icon={Users}           label="Customers"  active={activePage === "customers"}  onClick={closeSidebar} />
-          <NavItem icon={TicketCheck}     label="Support"    active={activePage === "support"}    onClick={closeSidebar} />
-          <NavItem icon={ShoppingCart}    label="Orders"     active={activePage === "orders"}     onClick={closeSidebar} />
         </nav>
 
         {/* Bottom user */}
