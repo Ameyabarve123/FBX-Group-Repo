@@ -361,7 +361,7 @@ export default function AdminHomepage() {
 
       try {
         const [usersRes, ticketsRes, ordersRes, plansRes] = await Promise.all([
-          supabase.from("users").select("*"),
+          supabase.from("users").select("*").eq('role', 0),
           supabase.from("tickets").select("*"),
           supabase.from("orders").select("*"),
           supabase.from("plans").select("*"),
