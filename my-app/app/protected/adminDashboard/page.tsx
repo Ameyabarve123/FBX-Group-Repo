@@ -6,6 +6,10 @@ import {
   ShoppingCart,
   TicketCheck,
   ExternalLink,
+  GraduationCap,
+  Plus,
+  Copy,
+  Check,
   LucideIcon,
 } from "lucide-react";
 import TicketModal from "@/components/dashboardComponents/ticketModal";
@@ -20,7 +24,7 @@ interface DBUser {
   client_name: string;
   is_admin: boolean;
   user_uuid: string;
-  role: number; // 0 = teacher
+  role: number;
 }
 
 interface DBTicket {
@@ -67,6 +71,11 @@ interface SectionCardProps {
 function getInitials(name: string): string {
   if (!name) return "?";
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function generatePassword(length = 12): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
 const ACCENTS = {
@@ -152,6 +161,168 @@ function EmptyRow({ message }: { message: string }) {
   );
 }
 
+// ─── COPY FIELD ───────────────────────────────────────────────────────────────
+
+function CopyField({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
+      <div className="flex items-center justify-between gap-3 bg-[#080710] border border-white/[0.06] px-4 py-3">
+        <span className="text-sm text-white/60 font-mono truncate">{value}</span>
+        <button onClick={handleCopy} className="flex-shrink-0 text-white/20 hover:text-[#9b7fe8] transition-colors">
+          {copied ? <Check size={13} className="text-[#9b7fe8]" /> : <Copy size={13} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CREDENTIALS MODAL ────────────────────────────────────────────────────────
+
+function CredentialsModal({
+  name, email, password, onClose,
+}: {
+  name: string;
+  email: string;
+  password: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+
+        <div className="flex items-center gap-3">
+          <GraduationCap size={14} className="text-[#9b7fe8]" />
+          <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Teacher Account Created</span>
+        </div>
+
+        <p className="text-white/25 text-xs leading-relaxed">
+          Share these credentials with the teacher. The password will not be shown again.
+        </p>
+
+        <div className="space-y-3">
+          <CopyField label="Name"     value={name}     />
+          <CopyField label="Email"    value={email}    />
+          <CopyField label="Password" value={password} />
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CREATE TEACHER MODAL ─────────────────────────────────────────────────────
+
+function CreateTeacherModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (name: string, email: string, password: string) => void;
+}) {
+  const [name,       setName]       = useState("");
+  const [email,      setEmail]      = useState("");
+  const [password,   setPassword]   = useState(generatePassword());
+  const [submitting, setSubmitting] = useState(false);
+  const [err,        setErr]        = useState<string | null>(null);
+
+  async function handleCreate() {
+    if (!name || !email || !password) return;
+    setSubmitting(true);
+    setErr(null);
+
+    try {
+      // Create the auth user via your API route (needs service-role key)
+      const res = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(error ?? "Failed to create account");
+      }
+
+      onCreated(name, email, password);
+      onClose();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <GraduationCap size={14} className="text-[#9b7fe8]" />
+            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Create Teacher Account</span>
+          </div>
+          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
+        </div>
+
+        <div className="space-y-3">
+          {[
+            { label: "Client Name",  value: name,     setter: setName,     placeholder: "e.g. Jane Smith",        type: "text"     },
+            { label: "Email",      value: email,    setter: setEmail,    placeholder: "e.g. jane@school.com",   type: "email"    },
+            { label: "Password",   value: password, setter: setPassword, placeholder: "Auto-generated",         type: "text"     },
+          ].map(({ label, value, setter, placeholder, type }) => (
+            <div key={label}>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
+              <input
+                type={type}
+                value={value}
+                onChange={(e) => setter(e.target.value)}
+                placeholder={placeholder}
+                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition font-mono"
+              />
+            </div>
+          ))}
+          {err && <p className="text-[#e8629a] text-xs">{err}</p>}
+        </div>
+
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            onClick={() => setPassword(generatePassword())}
+            className="text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-white/40 transition px-3 py-2 border border-white/[0.06] hover:border-white/10"
+          >
+            Regenerate
+          </button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-white/10 transition">
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!name || !email || !password || submitting}
+            className="flex-1 py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {submitting ? "Creating…" : "Create"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── PAGE COMPONENT ───────────────────────────────────────────────────────────
 
 export default function AdminHomepage() {
@@ -167,6 +338,12 @@ export default function AdminHomepage() {
   const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
   const [selectedPlan,   setSelectedPlan]   = useState<DBPlan | null>(null);
   const [selectedOrder,  setSelectedOrder]  = useState<DBOrder | null>(null);
+
+  const [createTeacherOpen, setCreateTeacherOpen] = useState(false);
+  const [newCredentials, setNewCredentials] = useState<{ name: string; email: string; password: string } | null>(null);
+
+  // Derived: teachers are users with role === 0
+  const teachers = dbUsers.filter((u) => u.role === 0);
 
   useEffect(() => {
     async function fetchAll() {
@@ -218,6 +395,10 @@ export default function AdminHomepage() {
     setSelectedTicket(null);
   }
 
+  function handleTeacherCreated(name: string, email: string, password: string) {
+    setNewCredentials({ name, email, password });
+  }
+
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
@@ -250,6 +431,20 @@ export default function AdminHomepage() {
         <OrderModal
           order={{ title: selectedOrder.order_title, description: selectedOrder.description, price: selectedOrder.price, trackingNumber: selectedOrder.tracking_number }}
           onClose={() => setSelectedOrder(null)}
+        />
+      )}
+      {createTeacherOpen && (
+        <CreateTeacherModal
+          onClose={() => setCreateTeacherOpen(false)}
+          onCreated={handleTeacherCreated}
+        />
+      )}
+      {newCredentials && (
+        <CredentialsModal
+          name={newCredentials.name}
+          email={newCredentials.email}
+          password={newCredentials.password}
+          onClose={() => setNewCredentials(null)}
         />
       )}
 
@@ -330,7 +525,31 @@ export default function AdminHomepage() {
          })}
       </SectionCard>
 
-
+      {/* Teachers */}
+      <SectionCard title="Teachers" icon={GraduationCap} count={teachers.length} accent="violet">
+        <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.04]">
+          <button
+            onClick={() => setCreateTeacherOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition flex-shrink-0"
+          >
+            <Plus size={12} />
+            New Teacher
+          </button>
+        </div>
+        <TableHeader cols={["Profile", "Name", "Role"]} />
+        {loading ? [1, 2].map(i => <LoadingRow key={i} />) :
+         teachers.length === 0 ? <EmptyRow message="No teacher accounts" /> :
+         teachers.map((u) => (
+           <div key={u.id}
+             className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0">
+             <Avatar initials={getInitials(u.client_name)} color="violet" />
+             <span className="text-white/60 text-sm truncate">{u.client_name}</span>
+             <span className="text-[10px] uppercase tracking-widest text-[#9b7fe8] bg-[#9b7fe8]/10 px-2 py-0.5 border border-[#9b7fe8]/20 w-fit">
+               Teacher
+             </span>
+           </div>
+         ))}
+      </SectionCard>
 
     </div>
   );

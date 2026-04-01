@@ -10,8 +10,10 @@ import {
   Star,
   Menu,
   X,
+  LogOut,
   LucideIcon,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface NavItemProps {
@@ -78,6 +80,12 @@ export default function Navbar({
 
   const closeSidebar = () => setSidebarOpen(false);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
 
   const initials = clientName
     ? clientName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
@@ -146,7 +154,7 @@ export default function Navbar({
           <div className="w-9 h-9 rounded-sm bg-[#9b7fe8]/10 ring-1 ring-[#9b7fe8]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#9b7fe8] flex-shrink-0">
             {initials}
           </div>
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm text-white/50 font-medium truncate">
               {isAdmin ? "Admin" : (clientName ?? "Client")}
             </span>
@@ -154,6 +162,13 @@ export default function Navbar({
               {isAdmin ? "admin@url.com" : "Client Portal"}
             </span>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-[#e8629a] transition-colors flex-shrink-0"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </aside>
 

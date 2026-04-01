@@ -1,4 +1,24 @@
+import { Suspense } from "react";
 import Navbar from "@/components/dashboardComponents/navbar";
+import { createClient } from "@/lib/supabase/server";
+
+async function NavbarWithUser() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: dbUser } = user
+    ? await supabase.from("users").select("client_name, is_admin").eq("user_uuid", user.id).single()
+    : { data: null };
+
+  return (
+    <Navbar
+      activePage="dashboard"
+      isAdmin={dbUser?.is_admin === 1}
+      clientName={dbUser?.client_name ?? undefined}
+    />
+  );
+}
 
 export default function ProtectedLayout({
   children,
@@ -10,15 +30,10 @@ export default function ProtectedLayout({
       className="min-h-screen bg-[#12111d] text-[#e8e0ee]"
       style={{ fontFamily: "'DM Sans', 'Outfit', sans-serif" }}
     >
-      {/* Sidebar + top bar (both fixed/absolute, managed internally) */}
-      <Navbar activePage="dashboard" />
+      <Suspense fallback={<div className="h-14 border-b border-white/[0.06] bg-[#080710]" />}>
+        <NavbarWithUser />
+      </Suspense>
 
-      {/* 
-        pt-14 clears the fixed top bar.
-        The sidebar is a fixed overlay on all sizes — it slides over content
-        rather than pushing it, which avoids needing shared state between
-        the layout and the navbar component.
-      */}
       <main className="pt-14 min-h-screen">
         {children}
       </main>
