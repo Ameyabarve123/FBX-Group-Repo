@@ -131,24 +131,6 @@ export default function ClientNavbar({
             active={activePage === "dashboard"}
             onClick={closeSidebar}
           />
-          <NavItem
-            icon={Star}
-            label="My Plan"
-            active={activePage === "plan"}
-            onClick={closeSidebar}
-          />
-          <NavItem
-            icon={Package}
-            label="Orders"
-            active={activePage === "orders"}
-            onClick={closeSidebar}
-          />
-          <NavItem
-            icon={TicketCheck}
-            label="Support"
-            active={activePage === "support"}
-            onClick={closeSidebar}
-          />
         </nav>
 
         {/* Bottom user */}

@@ -136,6 +136,7 @@ export default function Navbar({
 
         {/* Nav links */}
         <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
+
           {isAdmin ? (
             <>
               <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
@@ -145,6 +146,7 @@ export default function Navbar({
               <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
             </>
           )}
+        
         </nav>
 
         {/* Bottom user */}
