@@ -19,6 +19,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import OrderModal from "@/components/dashboardComponents/orderModal";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,13 @@ interface DBTicket {
   resolved: number;
 }
 
+interface ModalOrder {
+  title: string;
+  description: string;
+  price: string;
+  trackingNumber: string;
+}
+
 // ─── ACCENT CONFIGS ───────────────────────────────────────────────────────────
 
 const ACCENTS = {
@@ -89,6 +97,15 @@ function getInitials(name: string): string {
 function deriveStatus(order: DBOrder): Status {
   if (!order.tracking_number) return "processing";
   return "in_transit";
+}
+
+function toModalOrder(order: DBOrder): ModalOrder {
+  return {
+    title: order.order_title,
+    description: order.description,
+    price: order.price,
+    trackingNumber: order.tracking_number,
+  };
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
@@ -189,57 +206,6 @@ function TrackingNumber({ value }: { value: string }) {
   );
 }
 
-// ─── ORDER MODAL ──────────────────────────────────────────────────────────────
-
-function OrderModal({ order, onClose }: { order: DBOrder; onClose: () => void }) {
-  const status = deriveStatus(order);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Package size={14} className="text-[#7e8fb5]" />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Order Detail</span>
-          </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Order</p>
-            <p className="text-white/70 text-sm">{order.order_title}</p>
-          </div>
-          {order.description && (
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Description</p>
-              <p className="text-white/40 text-sm leading-relaxed">{order.description}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Price</p>
-              <p className="text-[#9b7fe8] text-sm font-medium">{order.price}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Status</p>
-              <StatusBadge status={status} />
-            </div>
-          </div>
-          {order.tracking_number && (
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Tracking Number</p>
-              <TrackingNumber value={order.tracking_number} />
-            </div>
-          )}
-        </div>
-        <button onClick={onClose} className="w-full py-2.5 border border-white/[0.06] text-white/30 text-xs uppercase tracking-[0.18em] hover:border-white/10 hover:text-white/50 transition">
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── TICKET DETAIL MODAL ──────────────────────────────────────────────────────
 
 function TicketDetailModal({
@@ -303,7 +269,6 @@ function TicketDetailModal({
         </div>
 
         <div className="flex gap-3 pt-1">
-          {/* Hard delete — always available */}
           <button
             onClick={() => handle("delete")}
             disabled={!!working}
@@ -313,7 +278,6 @@ function TicketDetailModal({
             {working === "delete" ? "Deleting…" : "Delete"}
           </button>
 
-          {/* Resolve — only for open tickets */}
           {!isResolved && (
             <button
               onClick={() => handle("resolve")}
@@ -493,7 +457,7 @@ export default function ClientDashboard() {
   const [error, setError]                     = useState<string | null>(null);
 
   const [submitOpen, setSubmitOpen]         = useState(false);
-  const [selectedOrder, setSelectedOrder]   = useState<DBOrder | null>(null);
+  const [selectedOrder, setSelectedOrder]   = useState<ModalOrder | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
   const [planOpen, setPlanOpen]             = useState(false);
 
@@ -532,7 +496,6 @@ export default function ClientDashboard() {
     fetchAll();
   }, []);
 
-  // Mark resolved=1 — stays visible until cron job hard-deletes nightly
   async function handleResolve(ticket: DBTicket) {
     const { error } = await supabase.from("tickets").update({ resolved: 1 }).eq("id", ticket.id);
     if (error) { console.error(error.message); return; }
@@ -540,7 +503,6 @@ export default function ClientDashboard() {
     setResolvedTickets((prev) => [{ ...ticket, resolved: 1 }, ...prev]);
   }
 
-  // Hard delete — removes the row entirely right now
   async function handleDelete(ticket: DBTicket) {
     const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
     if (error) { console.error(error.message); return; }
@@ -548,7 +510,6 @@ export default function ClientDashboard() {
     setResolvedTickets((prev) => prev.filter((t) => t.id !== ticket.id));
   }
 
-  // Optimistically add new ticket to open list without refetch
   function handleTicketSubmitted(ticket: DBTicket) {
     setOpenTickets((prev) => [ticket, ...prev]);
   }
@@ -669,7 +630,7 @@ export default function ClientDashboard() {
               return (
                 <div
                   key={o.id}
-                  onClick={() => setSelectedOrder(o)}
+                  onClick={() => setSelectedOrder(toModalOrder(o))}
                   className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
@@ -712,7 +673,7 @@ export default function ClientDashboard() {
         </div>
       </SectionCard>
 
-      {/* Open tickets — click any row to view details, resolve, or delete */}
+      {/* Open tickets */}
       <SectionCard title="My Tickets" icon={TicketCheck} count={openTickets.length} accent="pink">
         <TableHeader cols={["Title", "Details", "Status"]} />
         {loading
@@ -740,7 +701,7 @@ export default function ClientDashboard() {
         }
       </SectionCard>
 
-      {/* Resolved tickets — only rendered if any exist */}
+      {/* Resolved tickets */}
       {(loading || resolvedTickets.length > 0) && (
         <SectionCard title="Resolved Tickets" icon={CheckCircle2} count={resolvedTickets.length} accent="slate">
           <TableHeader cols={["Title", "Details", "Status"]} />

@@ -20,6 +20,7 @@ interface DBUser {
   client_name: string;
   is_admin: boolean;
   user_uuid: string;
+  role: number; // 0 = teacher
 }
 
 interface DBTicket {
@@ -68,8 +69,6 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-// ─── ACCENT CONFIGS ───────────────────────────────────────────────────────────
-
 const ACCENTS = {
   pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20", hex: "#e8629a" },
   violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20", hex: "#9b7fe8" },
@@ -94,7 +93,7 @@ function Avatar({ initials, color = "pink" }: AvatarProps) {
 function StatCard({ label, value, accent = "violet" }: { label: string; value: string; accent?: "pink" | "violet" | "slate" }) {
   const a = ACCENTS[accent];
   return (
-    <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden group hover:border-white/10 transition-colors duration-300">
+    <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
       <div className={`absolute inset-x-0 top-0 h-px ${a.bg}`} />
       <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">{label}</p>
       <p className={`text-4xl font-light ${a.text} tabular-nums`}>{value}</p>
@@ -124,10 +123,8 @@ function SectionCard({ title, icon: Icon, count, children, accent = "violet" }: 
 
 function TableHeader({ cols }: { cols: string[] }) {
   return (
-    <div
-      className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
-      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}
-    >
+    <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
+      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
       {cols.map((c) => (
         <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
       ))}
@@ -160,16 +157,16 @@ function EmptyRow({ message }: { message: string }) {
 export default function AdminHomepage() {
   const supabase = createClient();
 
-  const [dbUsers, setDbUsers]     = useState<DBUser[]>([]);
+  const [dbUsers,   setDbUsers]   = useState<DBUser[]>([]);
   const [dbTickets, setDbTickets] = useState<DBTicket[]>([]);
-  const [dbOrders, setDbOrders]   = useState<DBOrder[]>([]);
-  const [dbPlans, setDbPlans]     = useState<DBPlan[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const [dbOrders,  setDbOrders]  = useState<DBOrder[]>([]);
+  const [dbPlans,   setDbPlans]   = useState<DBPlan[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
 
   const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
-  const [selectedPlan, setSelectedPlan]     = useState<DBPlan | null>(null);
-  const [selectedOrder, setSelectedOrder]   = useState<DBOrder | null>(null);
+  const [selectedPlan,   setSelectedPlan]   = useState<DBPlan | null>(null);
+  const [selectedOrder,  setSelectedOrder]  = useState<DBOrder | null>(null);
 
   useEffect(() => {
     async function fetchAll() {
@@ -197,10 +194,10 @@ export default function AdminHomepage() {
         if (ordersRes.error)  throw new Error(`Orders: ${ordersRes.error.message}`);
         if (plansRes.error)   throw new Error(`Plans: ${plansRes.error.message}`);
 
-        setDbUsers(usersRes.data ?? []);
+        setDbUsers(usersRes.data   ?? []);
         setDbTickets(ticketsRes.data ?? []);
-        setDbOrders(ordersRes.data ?? []);
-        setDbPlans(plansRes.data ?? []);
+        setDbOrders(ordersRes.data  ?? []);
+        setDbPlans(plansRes.data    ?? []);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
       } finally {
@@ -238,12 +235,7 @@ export default function AdminHomepage() {
       {/* Modals */}
       {selectedTicket && (
         <TicketModal
-          ticket={{
-            title: selectedTicket.title,
-            name: selectedTicket.client_name,
-            contact: selectedTicket.contact_details,
-            details: selectedTicket.ticket_details,
-          }}
+          ticket={{ title: selectedTicket.title, name: selectedTicket.client_name, contact: selectedTicket.contact_details, details: selectedTicket.ticket_details }}
           onClose={() => setSelectedTicket(null)}
           onResolve={() => handleResolve(selectedTicket)}
         />
@@ -287,18 +279,12 @@ export default function AdminHomepage() {
                <Avatar initials={getInitials(u.client_name)} color="violet" />
                <div className="flex items-center gap-2 min-w-0">
                  <span className="text-white/60 text-sm truncate">{u.client_name}</span>
-                 {u.is_admin && (
-                   <span className="text-[10px] uppercase tracking-widest text-[#9b7fe8] border border-[#9b7fe8]/25 px-1.5 py-0.5 flex-shrink-0">
-                     Admin
-                   </span>
-                 )}
                </div>
                <div className="flex items-center gap-1.5">
                  {plan
                    ? <><span className="text-sm text-white/35 truncate">{plan.plan_title}</span>
                        <ExternalLink size={11} className="text-[#9b7fe8] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" /></>
-                   : <span className="text-sm text-white/15">—</span>
-                 }
+                   : <span className="text-sm text-white/15">—</span>}
                </div>
              </div>
            );
@@ -344,10 +330,6 @@ export default function AdminHomepage() {
          })}
       </SectionCard>
 
-      {/* Way to input tracking order TODO MAKE IT SUCH THAT USER CAN INPUT TRACKING NUMBER IN HERE AND VIEW 
-      THE TRACKING DETAILS. MAKE LIKE A MENU THAT IS SEARCHABLE THAT ALLOWS TO SEARCH BY TRACKING NUMBER OR 
-      CUSTOMER NAME, AND THEN CLICK ON THE TRACKING NUMBER TO COPY AND THEN PASTE INTO THE INPUT BOX TO SHOW
-      THE TRACKING INFORMATION*/}
 
 
     </div>

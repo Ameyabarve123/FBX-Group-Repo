@@ -8,7 +8,7 @@ export default function ClientDashboardLayout({
 }) {
   return (
     <div className="min-h-screen bg-[#080710]">
-      <ClientNavbar activePage="dashboard" />
+      {/* <ClientNavbar activePage="dashboard" /> */}
       <main>
         {children}
       </main>

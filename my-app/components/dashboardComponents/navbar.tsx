@@ -6,6 +6,8 @@ import {
   Users,
   ShoppingCart,
   TicketCheck,
+  Package,
+  Star,
   Menu,
   X,
   LucideIcon,
@@ -54,8 +56,16 @@ function NavItem({ icon: Icon, label, active = false, onClick }: NavItemProps) {
   );
 }
 
-// ─── Admin Navbar ─────────────────────────────────────────────────────────────
-export default function Navbar({ activePage = "dashboard" }: { activePage?: string }) {
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+export default function Navbar({
+  activePage = "dashboard",
+  isAdmin,
+  clientName,
+}: {
+  activePage?: string;
+  isAdmin: boolean;
+  clientName?: string;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -68,6 +78,10 @@ export default function Navbar({ activePage = "dashboard" }: { activePage?: stri
 
   const closeSidebar = () => setSidebarOpen(false);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
+  const initials = clientName
+    ? clientName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "A";
 
   return (
     <>
@@ -94,7 +108,7 @@ export default function Navbar({ activePage = "dashboard" }: { activePage?: stri
               FBX Technologies
             </p>
             <span className="text-white/60 text-base font-light tracking-wide">
-              Admin Panel
+              {isAdmin ? "Admin Panel" : "Client Portal"}
             </span>
           </div>
           <button
@@ -114,20 +128,29 @@ export default function Navbar({ activePage = "dashboard" }: { activePage?: stri
 
         {/* Nav links */}
         <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
-          <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
-          <NavItem icon={Users}           label="Customers"  active={activePage === "customers"}  onClick={closeSidebar} />
-          <NavItem icon={TicketCheck}     label="Support"    active={activePage === "support"}    onClick={closeSidebar} />
-          <NavItem icon={ShoppingCart}    label="Orders"     active={activePage === "orders"}     onClick={closeSidebar} />
+          {isAdmin ? (
+            <>
+              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
+            </>
+          ) : (
+            <>
+              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
+            </>
+          )}
         </nav>
 
         {/* Bottom user */}
         <div className="border-t border-white/[0.06] px-5 py-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-sm bg-[#9b7fe8]/10 ring-1 ring-[#9b7fe8]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#9b7fe8] flex-shrink-0">
-            M
+            {initials}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm text-white/50 font-medium truncate">Admin</span>
-            <span className="text-xs text-white/20 truncate tracking-wide">admin@url.com</span>
+            <span className="text-sm text-white/50 font-medium truncate">
+              {isAdmin ? "Admin" : (clientName ?? "Client")}
+            </span>
+            <span className="text-xs text-white/20 truncate tracking-wide">
+              {isAdmin ? "admin@url.com" : "Client Portal"}
+            </span>
           </div>
         </div>
       </aside>
@@ -158,7 +181,7 @@ export default function Navbar({ activePage = "dashboard" }: { activePage?: stri
             FBX Technologies
           </p>
           <h1 className="text-white/60 text-base font-light tracking-wide">
-            Admin Dashboard
+            {isAdmin ? "Admin Dashboard" : "Client Portal"}
           </h1>
         </div>
 
