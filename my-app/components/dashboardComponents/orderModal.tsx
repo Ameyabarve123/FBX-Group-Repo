@@ -138,123 +138,124 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70" onClick={onClose}>
-      <div className="flex min-h-full items-center justify-center p-8">
+      <div className="flex min-h-full items-end sm:items-center justify-center sm:p-8">
         <div
-          className="relative w-full max-w-4xl bg-[#0d0c14] border border-white/[0.06]"
+          className="relative w-full sm:max-w-4xl bg-[#0d0c14] border-t sm:border border-white/[0.06] sm:mb-0"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Header ── */}
-          <div className="px-10 py-8 border-b border-white/[0.06] flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.22em] text-white/20 font-medium mb-2">
+          <div className="px-5 sm:px-10 py-5 sm:py-8 border-b border-white/[0.06] flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.22em] text-white/20 font-medium mb-1.5 sm:mb-2">
                 Order Details
               </p>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-white/75 text-3xl font-light tracking-wide">{order.title}</h2>
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h2 className="text-white/75 text-xl sm:text-3xl font-light tracking-wide truncate">{order.title}</h2>
                 {trackingInfo && <StatusBadge status={trackingInfo.status} />}
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center text-white/20 hover:text-white/50 transition flex-shrink-0 mt-1"
+              className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white/20 hover:text-white/50 transition flex-shrink-0 mt-0.5"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
           {/* ── Body ── */}
-          <div className="px-10 py-9 flex flex-col sm:flex-row gap-10">
+          <div className="px-5 sm:px-10 py-6 sm:py-9 flex flex-col gap-6 sm:gap-10 sm:flex-row">
 
-            {/* Left: order fields */}
-            <div className="flex flex-col gap-9 sm:w-72 flex-shrink-0">
+            {/* Order fields — horizontal pills on mobile, vertical stack on desktop */}
+            <div className="flex flex-col gap-5 sm:gap-9 sm:w-72 sm:flex-shrink-0">
+
+              {/* Description */}
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <FileText size={15} className="text-[#9b7fe8]" />
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Description</p>
+                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                  <FileText size={13} className="text-[#9b7fe8]" />
+                  <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Description</p>
                 </div>
-                <p className="text-white/50 text-lg leading-relaxed pl-7">{order.description}</p>
+                <p className="text-white/50 text-sm sm:text-lg leading-relaxed pl-5 sm:pl-7">{order.description}</p>
               </div>
 
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <DollarSign size={15} className="text-[#e8629a]" />
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Price</p>
+              {/* Price + Tracking — side by side on mobile */}
+              <div className="grid grid-cols-2 gap-4 sm:contents">
+                <div>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <DollarSign size={13} className="text-[#e8629a]" />
+                    <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Price</p>
+                  </div>
+                  <p className="text-white/70 text-sm sm:text-lg font-medium sm:pl-7">{order.price}</p>
                 </div>
-                <p className="text-white/70 text-lg font-medium pl-7">{order.price}</p>
-              </div>
 
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <Hash size={15} className="text-[#7e8fb5]" />
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Tracking Number</p>
-                </div>
-                <div className="flex items-center gap-2 pl-7">
-                  <p className="text-white/70 text-base font-mono">{order.trackingNumber || "—"}</p>
-                  {order.trackingNumber && <CopyButton text={order.trackingNumber} />}
+                <div>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <Hash size={13} className="text-[#7e8fb5]" />
+                    <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/20 font-medium">Tracking</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:pl-7">
+                    <p className="text-white/70 text-xs sm:text-base font-mono truncate">{order.trackingNumber || "—"}</p>
+                    {order.trackingNumber && <CopyButton text={order.trackingNumber} />}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right: tracking info */}
+            {/* Tracking info */}
             {order.trackingNumber && (
-              <div className="flex-1 border-l border-white/[0.06] pl-10">
-                <p className="text-sm uppercase tracking-[0.2em] text-white/20 font-medium mb-5">
+              <div className="sm:flex-1 sm:border-l border-t sm:border-t-0 border-white/[0.06] pt-5 sm:pt-0 sm:pl-10">
+                <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/20 font-medium mb-4 sm:mb-5">
                   Shipment Tracking
                 </p>
 
-                {/* Loading */}
                 {tracking === "loading" && (
-                  <div className="flex items-center gap-3 text-white/25 py-4">
-                    <Loader2 size={14} className="animate-spin text-[#f59e42]" />
+                  <div className="flex items-center gap-3 text-white/25 py-3">
+                    <Loader2 size={13} className="animate-spin text-[#f59e42]" />
                     <span className="text-xs tracking-widest uppercase">Fetching tracking info…</span>
                   </div>
                 )}
 
-                {/* Error */}
                 {tracking === "error" && (
-                  <div className="flex items-center gap-2 text-[#e8629a]/70 py-4">
-                    <AlertCircle size={14} />
+                  <div className="flex items-center gap-2 text-[#e8629a]/70 py-3">
+                    <AlertCircle size={13} />
                     <span className="text-xs">Could not retrieve tracking information.</span>
                   </div>
                 )}
 
-                {/* Tracking data */}
                 {trackingInfo && (
-                  <div className="space-y-5">
-                    {/* Meta row */}
+                  <div className="space-y-4 sm:space-y-5">
+                    {/* Meta row — 3 cols on desktop, 1 row scroll on mobile */}
                     <div className="grid grid-cols-3 gap-px bg-white/[0.04]">
                       {[
                         { icon: MapPin, label: "Origin",        val: trackingInfo.origin },
                         { icon: MapPin, label: "Destination",   val: trackingInfo.destination },
                         { icon: Clock,  label: "Est. Delivery", val: trackingInfo.estimatedDelivery ? fmt(trackingInfo.estimatedDelivery) : "—" },
                       ].map(({ icon: Icon, label, val }) => (
-                        <div key={label} className="bg-[#0d0c14] px-4 py-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Icon size={10} className="text-[#f59e42]" />
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-white/20">{label}</span>
+                        <div key={label} className="bg-[#0d0c14] px-3 sm:px-4 py-2.5 sm:py-3">
+                          <div className="flex items-center gap-1 sm:gap-1.5 mb-1">
+                            <Icon size={9} className="text-[#f59e42]" />
+                            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-white/20">{label}</span>
                           </div>
-                          <p className="text-white/50 text-sm">{val}</p>
+                          <p className="text-white/50 text-xs sm:text-sm truncate">{val}</p>
                         </div>
                       ))}
                     </div>
 
-                    {/* Status detail */}
-                    <p className="text-white/35 text-sm">{trackingInfo.statusDetail}</p>
+                    <p className="text-white/35 text-xs sm:text-sm">{trackingInfo.statusDetail}</p>
 
                     {/* Timeline */}
                     {trackingInfo.events.length > 0 && (
-                      <div className="max-h-60 overflow-y-auto pr-1 space-y-0">
+                      <div className="max-h-48 sm:max-h-60 overflow-y-auto pr-1 space-y-0">
                         {trackingInfo.events.map((ev, i) => (
-                          <div key={i} className="flex gap-3 pb-4 last:pb-0 relative">
+                          <div key={i} className="flex gap-3 pb-3 sm:pb-4 last:pb-0 relative">
                             {i < trackingInfo.events.length - 1 && (
                               <div className="absolute left-[5px] top-3 bottom-0 w-px bg-white/[0.06]" />
                             )}
                             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ring-2 ring-[#0d0c14] ${i === 0 ? "bg-[#f59e42]" : "bg-white/15"}`} />
                             <div className="min-w-0">
-                              <p className={`text-sm ${i === 0 ? "text-white/70" : "text-white/35"}`}>{ev.description}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {ev.location  && <span className="text-[11px] text-white/20">{ev.location}</span>}
-                                {ev.timestamp && <span className="text-[11px] text-white/15">{fmt(ev.timestamp)}</span>}
+                              <p className={`text-xs sm:text-sm ${i === 0 ? "text-white/70" : "text-white/35"}`}>{ev.description}</p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                {ev.location  && <span className="text-[10px] sm:text-[11px] text-white/20">{ev.location}</span>}
+                                {ev.timestamp && <span className="text-[10px] sm:text-[11px] text-white/15">{fmt(ev.timestamp)}</span>}
                               </div>
                             </div>
                           </div>
@@ -268,10 +269,10 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
           </div>
 
           {/* ── Footer ── */}
-          <div className="px-10 pb-10 border-t border-white/[0.06] pt-6">
+          <div className="px-5 sm:px-10 pb-6 sm:pb-10 border-t border-white/[0.06] pt-4 sm:pt-6">
             <button
               onClick={onClose}
-              className="w-full py-4 text-white/30 text-sm uppercase tracking-[0.2em] hover:text-white/60 hover:bg-white/[0.02] border border-white/[0.06] transition-colors duration-150"
+              className="w-full py-3 sm:py-4 text-white/30 text-xs sm:text-sm uppercase tracking-[0.2em] hover:text-white/60 hover:bg-white/[0.02] border border-white/[0.06] transition-colors duration-150"
             >
               Close
             </button>
