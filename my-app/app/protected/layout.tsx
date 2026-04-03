@@ -1,24 +1,5 @@
 import { Suspense } from "react";
-import Navbar from "@/components/dashboardComponents/navbar";
-import { createClient } from "@/lib/supabase/server";
-
-async function NavbarWithUser() {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { data: dbUser } = user
-    ? await supabase.from("users").select("client_name, is_admin").eq("user_uuid", user.id).single()
-    : { data: null };
-
-  return (
-    <Navbar
-      activePage="dashboard"
-      isAdmin={dbUser?.is_admin === 1}
-      clientName={dbUser?.client_name ?? undefined}
-    />
-  );
-}
+import NavbarWithUser from "@/components/dashboardComponents/navbar-with-user";
 
 export default function ProtectedLayout({
   children,

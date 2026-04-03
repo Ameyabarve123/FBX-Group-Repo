@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +12,7 @@ import {
   Menu,
   X,
   LogOut,
+  User,
   LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,19 +23,13 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  href?: string;
 }
 
 // ─── Nav Item ─────────────────────────────────────────────────────────────────
-function NavItem({ icon: Icon, label, active = false, onClick }: NavItemProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150 border-b border-white/[0.04] group relative ${
-        active
-          ? "bg-white/[0.03] text-white/75"
-          : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]"
-      }`}
-    >
+function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemProps) {
+  const content = (
+    <>
       {active && (
         <span className="absolute left-0 top-0 bottom-0 w-px bg-[#e8629a]" />
       )}
@@ -54,6 +50,26 @@ function NavItem({ icon: Icon, label, active = false, onClick }: NavItemProps) {
       {active && (
         <span className="ml-auto text-[10px] text-[#e8629a]">●</span>
       )}
+    </>
+  );
+
+  const className = `w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150 border-b border-white/[0.04] group relative ${
+    active
+      ? "bg-white/[0.03] text-white/75"
+      : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]"
+  }`;
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={className}>
+      {content}
     </button>
   );
 }
@@ -139,11 +155,13 @@ export default function Navbar({
 
           {isAdmin ? (
             <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
+              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
+              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
             </>
           ) : (
             <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} onClick={closeSidebar} />
+              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
+              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
             </>
           )}
         
