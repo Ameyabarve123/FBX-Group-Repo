@@ -337,7 +337,7 @@ function SubmitTicketModal({
         <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-8 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
           <CheckCircle2 size={28} className="text-[#9b7fe8]" />
           <p className="text-white/60 text-xs uppercase tracking-[0.18em]">Ticket Submitted</p>
-          <p className="text-white/25 text-xs">We'll get back to you within 24 hours.</p>
+          <p className="text-white/25 text-xs">We&apos;ll get back to you within 24 hours.</p>
           <button onClick={onClose} className="mt-2 px-6 py-2 border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] hover:border-white/15 hover:text-white/60 transition">
             Done
           </button>
