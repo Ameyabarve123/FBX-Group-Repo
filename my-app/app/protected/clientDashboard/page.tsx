@@ -5,31 +5,22 @@ import {
   Package,
   TicketCheck,
   ExternalLink,
-  ChevronRight,
   Truck,
   Clock,
   CheckCircle2,
   AlertCircle,
-  Star,
-  Zap,
-  Shield,
   Copy,
   Check,
   Trash2,
+  GraduationCap,
+  Tent,
+  UserPlus,
   LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import OrderModal from "@/components/dashboardComponents/orderModal";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-
-interface DBPlan {
-  id: string;
-  plan_title: string;
-  description: string;
-  price: string;
-  user_uuid: string;
-}
 
 interface DBOrder {
   id: string;
@@ -57,6 +48,20 @@ interface DBTicket {
   resolved: number;
 }
 
+interface DBCourse {
+  id: string;
+  course_link: string;
+  course_uuid: string;
+  course_name: string;
+}
+
+interface DBStudentCourse {
+  id: string;
+  course_uuid: string;
+  student_email: string;
+  client_uuid: string;
+}
+
 interface ModalOrder {
   title: string;
   description: string;
@@ -67,9 +72,9 @@ interface ModalOrder {
 // ─── ACCENT CONFIGS ───────────────────────────────────────────────────────────
 
 const ACCENTS = {
-  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20", hex: "#e8629a" },
-  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20", hex: "#9b7fe8" },
-  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10", border: "border-[#7e8fb5]/20", hex: "#7e8fb5" },
+  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/15", border: "border-[#e8629a]/30", hex: "#e8629a" },
+  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/15", border: "border-[#9b7fe8]/30", hex: "#9b7fe8" },
+  slate:  { text: "text-[#8e9fc5]", bg: "bg-[#8e9fc5]/15", border: "border-[#8e9fc5]/30", hex: "#8e9fc5" },
 };
 
 type Status = "in_transit" | "delivered" | "processing" | "delayed";
@@ -79,12 +84,6 @@ const STATUS_CONFIG: Record<Status, { label: string; color: string; icon: Lucide
   delivered:  { label: "Delivered",  color: "slate",  icon: CheckCircle2 },
   processing: { label: "Processing", color: "pink",   icon: Clock },
   delayed:    { label: "Delayed",    color: "pink",   icon: AlertCircle },
-};
-
-const TIER_ICONS: Record<string, { icon: LucideIcon; accent: "pink" | "violet" | "slate" }> = {
-  "Basic Tier":      { icon: Star,   accent: "pink"   },
-  "Pro Tier":        { icon: Zap,    accent: "violet" },
-  "Enterprise Tier": { icon: Shield, accent: "slate"  },
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -112,12 +111,12 @@ function toModalOrder(order: DBOrder): ModalOrder {
 
 function Avatar({ initials, accent = "pink" }: { initials: string; accent?: "pink" | "violet" | "slate" }) {
   const styles = {
-    pink:   "bg-[#e8629a]/10 text-[#e8629a] ring-1 ring-[#e8629a]/25",
-    violet: "bg-[#9b7fe8]/10 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/25",
-    slate:  "bg-[#7e8fb5]/10 text-[#7e8fb5] ring-1 ring-[#7e8fb5]/25",
+    pink:   "bg-[#e8629a]/15 text-[#e8629a] ring-1 ring-[#e8629a]/30",
+    violet: "bg-[#9b7fe8]/15 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/30",
+    slate:  "bg-[#8e9fc5]/15 text-[#8e9fc5] ring-1 ring-[#8e9fc5]/30",
   };
   return (
-    <div className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 ${styles[accent]}`}>
+    <div className={`w-10 h-10 rounded-md flex items-center justify-center text-sm font-bold tracking-widest flex-shrink-0 ${styles[accent]}`}>
       {initials}
     </div>
   );
@@ -130,11 +129,11 @@ function SectionCard({
 }) {
   const a = ACCENTS[accent];
   return (
-    <div className="bg-[#0d0c14] border border-white/[0.06]">
-      <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
+    <div className="bg-[#0d0c14] border border-white/[0.08]">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
-          <Icon size={15} className={a.text} />
-          <h2 className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">{title}</h2>
+          <Icon size={16} className={a.text} />
+          <h2 className="text-white/60 text-sm uppercase tracking-[0.18em] font-medium">{title}</h2>
         </div>
         {count !== undefined && (
           <span className={`text-xs font-bold px-2 py-0.5 ${a.bg} ${a.text} tracking-wider`}>
@@ -149,10 +148,10 @@ function SectionCard({
 
 function TableHeader({ cols }: { cols: string[] }) {
   return (
-    <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
+    <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06]"
       style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
       {cols.map((c) => (
-        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
+        <span key={c} className="text-xs uppercase tracking-[0.18em] text-white/35 font-medium">{c}</span>
       ))}
     </div>
   );
@@ -160,11 +159,11 @@ function TableHeader({ cols }: { cols: string[] }) {
 
 function LoadingRow() {
   return (
-    <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.04]">
-      <div className="w-10 h-10 rounded-md bg-white/5 flex-shrink-0" />
+    <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.06]">
+      <div className="w-10 h-10 rounded-md bg-white/10 flex-shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3 bg-white/5 rounded w-1/3" />
-        <div className="h-2.5 bg-white/5 rounded w-1/5" />
+        <div className="h-3 bg-white/10 rounded w-1/3" />
+        <div className="h-2.5 bg-white/10 rounded w-1/5" />
       </div>
     </div>
   );
@@ -172,7 +171,7 @@ function LoadingRow() {
 
 function EmptyRow({ message }: { message: string }) {
   return (
-    <div className="px-5 py-8 text-center text-white/15 text-xs tracking-[0.18em] uppercase">{message}</div>
+    <div className="px-5 py-8 text-center text-white/25 text-sm tracking-[0.18em] uppercase">{message}</div>
   );
 }
 
@@ -181,8 +180,8 @@ function StatusBadge({ status }: { status: Status }) {
   const a = ACCENTS[cfg.color as "pink" | "violet" | "slate"];
   const StatusIcon = cfg.icon;
   return (
-    <span className={`flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${a.bg} ${a.text} border ${a.border}`}>
-      <StatusIcon size={10} />{cfg.label}
+    <span className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest ${a.bg} ${a.text} border ${a.border}`}>
+      <StatusIcon size={11} />{cfg.label}
     </span>
   );
 }
@@ -197,12 +196,30 @@ function TrackingNumber({ value }: { value: string }) {
   }
   return (
     <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} className="flex items-center gap-1.5 group/copy" title="Copy tracking number">
-      <span className="text-xs text-white/25 font-mono truncate max-w-[140px]">{value}</span>
+      <span className="text-sm text-white/40 font-mono truncate max-w-[140px]">{value}</span>
       {copied
-        ? <Check size={11} className="text-[#9b7fe8] flex-shrink-0" />
-        : <Copy size={11} className="text-white/20 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+        ? <Check size={12} className="text-[#9b7fe8] flex-shrink-0" />
+        : <Copy size={12} className="text-white/30 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
       }
     </button>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs uppercase tracking-[0.18em] text-white/30 mb-1.5 font-medium">{children}</p>;
+}
+
+function TextInput({ value, onChange, placeholder, type = "text" }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 placeholder:text-white/20 outline-none focus:border-white/20 transition"
+    />
   );
 }
 
@@ -229,62 +246,59 @@ function TicketDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-[#080710]/95 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.1] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <TicketCheck size={14} className={isResolved ? "text-[#7e8fb5]" : "text-[#e8629a]"} />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Ticket Detail</span>
+            <TicketCheck size={16} className={isResolved ? "text-[#8e9fc5]" : "text-[#e8629a]"} />
+            <span className="text-white/60 text-xs uppercase tracking-[0.18em] font-medium">Ticket Detail</span>
           </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition text-xl leading-none">×</button>
         </div>
-
         <div className="space-y-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Title</p>
-            <p className="text-white/70 text-sm">{ticket.title}</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 font-medium">Title</p>
+            <p className="text-white/80 text-base">{ticket.title}</p>
           </div>
           {ticket.contact_details && (
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Contact</p>
-              <p className="text-white/40 text-sm">{ticket.contact_details}</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 font-medium">Contact</p>
+              <p className="text-white/60 text-sm">{ticket.contact_details}</p>
             </div>
           )}
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Details</p>
-            <p className="text-white/40 text-sm leading-relaxed">{ticket.ticket_details}</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 font-medium">Details</p>
+            <p className="text-white/60 text-sm leading-relaxed">{ticket.ticket_details}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Status</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 font-medium">Status</p>
             {isResolved ? (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#7e8fb5]">
-                <CheckCircle2 size={10} /> Resolved
+              <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#8e9fc5]">
+                <CheckCircle2 size={11} /> Resolved
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#e8629a]">
-                <Clock size={10} /> Open
+              <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#e8629a]">
+                <Clock size={11} /> Open
               </span>
             )}
           </div>
         </div>
-
         <div className="flex gap-3 pt-1">
           <button
             onClick={() => handle("delete")}
             disabled={!!working}
-            className="flex items-center justify-center gap-1.5 flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 flex-1 py-2.5 border border-white/[0.08] text-white/35 text-xs uppercase tracking-[0.18em] hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <Trash2 size={11} />
+            <Trash2 size={12} />
             {working === "delete" ? "Deleting…" : "Delete"}
           </button>
-
           {!isResolved && (
             <button
               onClick={() => handle("resolve")}
               disabled={!!working}
-              className="flex items-center justify-center gap-1.5 flex-1 py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-1.5 flex-1 py-2.5 bg-[#9b7fe8]/15 border border-[#9b7fe8]/30 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/25 transition disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <CheckCircle2 size={11} />
+              <CheckCircle2 size={12} />
               {working === "resolve" ? "Resolving…" : "Resolve"}
             </button>
           )}
@@ -333,12 +347,12 @@ function SubmitTicketModal({
   if (submitted) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-8 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
-          <CheckCircle2 size={28} className="text-[#9b7fe8]" />
-          <p className="text-white/60 text-xs uppercase tracking-[0.18em]">Ticket Submitted</p>
-          <p className="text-white/25 text-xs">We&apos;ll get back to you within 24 hours.</p>
-          <button onClick={onClose} className="mt-2 px-6 py-2 border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] hover:border-white/15 hover:text-white/60 transition">
+        <div className="absolute inset-0 bg-[#080710]/95 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative z-10 bg-[#0d0c14] border border-white/[0.1] p-8 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
+          <CheckCircle2 size={32} className="text-[#9b7fe8]" />
+          <p className="text-white/70 text-sm uppercase tracking-[0.18em] font-medium">Ticket Submitted</p>
+          <p className="text-white/40 text-sm">We&apos;ll get back to you within 24 hours.</p>
+          <button onClick={onClose} className="mt-2 px-6 py-2 border border-white/[0.1] text-white/50 text-xs uppercase tracking-[0.18em] hover:border-white/20 hover:text-white/70 transition">
             Done
           </button>
         </div>
@@ -348,14 +362,14 @@ function SubmitTicketModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-[#080710]/95 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.1] p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <TicketCheck size={14} className="text-[#e8629a]" />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Submit Ticket</span>
+            <TicketCheck size={16} className="text-[#e8629a]" />
+            <span className="text-white/60 text-xs uppercase tracking-[0.18em] font-medium">Submit Ticket</span>
           </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition text-xl leading-none">×</button>
         </div>
         <div className="space-y-3">
           {[
@@ -363,35 +377,30 @@ function SubmitTicketModal({
             { label: "Contact", value: contact, setter: setContact, placeholder: "Email or phone" },
           ].map(({ label, value, setter, placeholder }) => (
             <div key={label}>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
-              <input
-                value={value}
-                onChange={(e) => setter(e.target.value)}
-                placeholder={placeholder}
-                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition"
-              />
+              <FieldLabel>{label}</FieldLabel>
+              <TextInput value={value} onChange={setter} placeholder={placeholder} />
             </div>
           ))}
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">Details</p>
+            <FieldLabel>Details</FieldLabel>
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               rows={4}
               placeholder="Describe your issue..."
-              className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition resize-none"
+              className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 placeholder:text-white/20 outline-none focus:border-white/20 transition resize-none"
             />
           </div>
-          {err && <p className="text-[#e8629a] text-xs">{err}</p>}
+          {err && <p className="text-[#e8629a] text-sm">{err}</p>}
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-white/10 transition">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-white/[0.08] text-white/35 text-xs uppercase tracking-[0.18em] hover:border-white/15 transition">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!title || !details || submitting}
-            className="flex-1 py-2.5 bg-[#e8629a]/10 border border-[#e8629a]/20 text-[#e8629a] text-xs uppercase tracking-[0.18em] hover:bg-[#e8629a]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 bg-[#e8629a]/15 border border-[#e8629a]/30 text-[#e8629a] text-xs uppercase tracking-[0.18em] hover:bg-[#e8629a]/25 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {submitting ? "Submitting…" : "Submit"}
           </button>
@@ -401,44 +410,300 @@ function SubmitTicketModal({
   );
 }
 
-// ─── PLAN MODAL ───────────────────────────────────────────────────────────────
+// ─── CAMP APPLICATION SECTION ─────────────────────────────────────────────────
 
-function PlanModal({ plan, onClose }: { plan: DBPlan; onClose: () => void }) {
-  const tierKey = plan.plan_title ?? "Basic Tier";
-  const cfg = TIER_ICONS[tierKey] ?? TIER_ICONS["Basic Tier"];
-  const TierIcon = cfg.icon;
-  const a = ACCENTS[cfg.accent];
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <TierIcon size={14} className={a.text} />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Plan Details</span>
-          </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Tier</p>
-            <p className={`text-sm font-medium ${a.text}`}>{plan.plan_title}</p>
-          </div>
-          {plan.description && (
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Description</p>
-              <p className="text-white/40 text-sm leading-relaxed">{plan.description}</p>
-            </div>
-          )}
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1">Price</p>
-            <p className={`text-2xl font-light ${a.text} tabular-nums`}>{plan.price}<span className="text-xs text-white/20 ml-1">/mo</span></p>
-          </div>
-        </div>
-        <button onClick={onClose} className="w-full py-2.5 border border-white/[0.06] text-white/30 text-xs uppercase tracking-[0.18em] hover:border-white/10 hover:text-white/50 transition">
-          Close
+const CAMP_TYPES: { value: string; label: string }[] = [
+  { value: "0", label: "FBX Robotics" },
+  { value: "1", label: "FBX 3D-Printing" },
+];
+
+function CampApplicationSection({ clientUuid }: { clientUuid: string }) {
+  const supabase = createClient();
+
+  const [campType, setCampType]             = useState("");
+  const [campDate, setCampDate]             = useState("");
+  const [studentNum, setStudentNum]         = useState("");
+  const [volunteerNum, setVolunteerNum]     = useState("");
+  const [addlVolunteers, setAddlVolunteers] = useState(false);
+  const [addlDetails, setAddlDetails]       = useState("");
+  const [submitting, setSubmitting]         = useState(false);
+  const [submitted, setSubmitted]           = useState(false);
+  const [err, setErr]                       = useState<string | null>(null);
+
+  async function handleSubmit() {
+    if (!campType || !campDate || !studentNum) return;
+    setSubmitting(true);
+    setErr(null);
+    const { error } = await supabase.from("camp_applications").insert({
+      client_uuid: clientUuid,
+      camp_type: Number(campType),
+      camp_dates: new Date(campDate).toISOString(),
+      student_num: Number(studentNum),
+      volunteer_num: volunteerNum ? Number(volunteerNum) : null,
+      additional_volunteers: addlVolunteers,
+      additional_details: addlDetails || null,
+    });
+    setSubmitting(false);
+    if (error) { setErr(error.message); return; }
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <div className="px-5 py-8 flex flex-col items-center gap-3 text-center">
+        <CheckCircle2 size={28} className="text-[#9b7fe8]" />
+        <p className="text-white/60 text-sm uppercase tracking-[0.18em] font-medium">Application Submitted</p>
+        <p className="text-white/35 text-sm">We&apos;ll review your application and follow up shortly.</p>
+        <button
+          onClick={() => { setSubmitted(false); setCampType(""); setCampDate(""); setStudentNum(""); setVolunteerNum(""); setAddlVolunteers(false); setAddlDetails(""); }}
+          className="mt-1 text-xs uppercase tracking-widest text-white/30 hover:text-white/50 transition"
+        >
+          Submit Another
         </button>
       </div>
+    );
+  }
+
+  return (
+    <div className="px-5 py-5 space-y-4">
+      {/* Row 1: camp type + date */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <FieldLabel>Camp Type</FieldLabel>
+          <select
+            value={campType}
+            onChange={(e) => setCampType(e.target.value)}
+            className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 outline-none focus:border-white/20 transition appearance-none"
+          >
+            <option value="" disabled className="bg-[#080710]">Select a type…</option>
+            {CAMP_TYPES.map((t) => (
+              <option key={t.value} value={t.value} className="bg-[#080710]">{t.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <FieldLabel>Camp Date</FieldLabel>
+          <input
+            type="date"
+            value={campDate}
+            onChange={(e) => setCampDate(e.target.value)}
+            className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 outline-none focus:border-white/20 transition [color-scheme:dark]"
+          />
+        </div>
+      </div>
+
+      {/* Row 2: student + volunteer counts */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <FieldLabel>Number of Students</FieldLabel>
+          <TextInput value={studentNum} onChange={setStudentNum} placeholder="e.g. 30" type="number" />
+        </div>
+        <div>
+          <FieldLabel>Number of Volunteers</FieldLabel>
+          <TextInput value={volunteerNum} onChange={setVolunteerNum} placeholder="e.g. 5" type="number" />
+        </div>
+      </div>
+
+      {/* Additional volunteers checkbox */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setAddlVolunteers((v) => !v)}
+          className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 transition ${
+            addlVolunteers
+              ? "bg-[#9b7fe8]/30 border-[#9b7fe8]/60"
+              : "bg-transparent border-white/20 hover:border-white/30"
+          }`}
+        >
+          {addlVolunteers && <Check size={10} className="text-[#9b7fe8]" />}
+        </button>
+        <span className="text-sm text-white/40 tracking-wide">Additional volunteers may be needed</span>
+      </div>
+
+      {/* Additional details */}
+      <div>
+        <FieldLabel>Additional Details <span className="text-white/20 normal-case">(optional)</span></FieldLabel>
+        <textarea
+          value={addlDetails}
+          onChange={(e) => setAddlDetails(e.target.value)}
+          rows={3}
+          placeholder="Any special requirements, accommodations, or notes…"
+          className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 placeholder:text-white/20 outline-none focus:border-white/20 transition resize-none"
+        />
+      </div>
+
+      {err && <p className="text-[#e8629a] text-sm">{err}</p>}
+
+      <div className="flex justify-end pt-1">
+        <button
+          onClick={handleSubmit}
+          disabled={!campType || !campDate || !studentNum || submitting}
+          className="px-6 py-2.5 bg-[#9b7fe8]/15 border border-[#9b7fe8]/30 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/25 transition disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Submitting…" : "Submit Application"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADD STUDENT SECTION ──────────────────────────────────────────────────────
+
+function AddStudentSection({ clientUuid }: { clientUuid: string }) {
+  const supabase = createClient();
+
+  const [courses, setCourses]         = useState<DBCourse[]>([]);
+  const [enrolled, setEnrolled]       = useState<DBStudentCourse[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [email, setEmail]             = useState("");
+  const [submitting, setSubmitting]   = useState(false);
+  const [err, setErr]                 = useState<string | null>(null);
+  const [success, setSuccess]         = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      setLoadingCourses(true);
+      const [coursesRes, enrolledRes] = await Promise.all([
+        supabase.from("courses").select("*"),
+        supabase.from("student_courses").select("*").eq("client_uuid", clientUuid),
+      ]);
+      setCourses(coursesRes.data ?? []);
+      setEnrolled(enrolledRes.data ?? []);
+      setLoadingCourses(false);
+    }
+    load();
+  }, [clientUuid]);
+
+  async function handleAdd() {
+  if (!selectedCourse || !email) return;
+  
+  // ─── DEBUGGING: Add this block ──────────────────────────────────
+  console.log("========== DEBUG: Adding Student ==========");
+  console.log("1. Selected course UUID:", selectedCourse);
+  console.log("2. Student email:", email);
+  console.log("3. clientUuid being sent:", clientUuid);
+  
+  // Get the current authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log("4. Current auth user ID:", user?.id);
+  console.log("5. Do they match?", clientUuid === user?.id ? "✅ YES" : "❌ NO");
+  console.log("===========================================");
+  // ─── END DEBUGGING ──────────────────────────────────────────────
+  
+  setSubmitting(true);
+  setErr(null);
+  setSuccess(false);
+  const { data, error } = await supabase.from("student_courses").insert({
+    course_uuid: selectedCourse,
+    student_email: email.trim().toLowerCase(),
+    client_uuid: clientUuid,
+  }).select().single();
+  
+  // ─── Also log the response ──────────────────────────────────────
+  console.log("Insert response:", { data, error });
+  // ────────────────────────────────────────────────────────────────
+  
+  setSubmitting(false);
+  if (error) { setErr(error.message); return; }
+  if (data) setEnrolled((prev) => [...prev, data as DBStudentCourse]);
+  setEmail("");
+  setSuccess(true);
+  setTimeout(() => setSuccess(false), 3000);
+}
+
+  async function handleRemove(id: string) {
+    const { error } = await supabase.from("student_courses").delete().eq("id", id);
+    if (error) { console.error(error.message); return; }
+    setEnrolled((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  // Updated to use course_name
+  const getCourseName = (uuid: string) => {
+    const c = courses.find((c) => c.course_uuid === uuid);
+    return c?.course_name || c?.course_link || `Course ${c?.id}` || uuid;
+  };
+
+  return (
+    <div className="divide-y divide-white/[0.06]">
+      {/* Add form */}
+      <div className="px-5 py-5 space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <FieldLabel>Course</FieldLabel>
+            {loadingCourses ? (
+              <div className="h-11 bg-white/10 animate-pulse" />
+            ) : (
+              <select
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                className="w-full bg-[#080710] border border-white/[0.08] px-4 py-3 text-sm text-white/70 outline-none focus:border-white/20 transition appearance-none"
+              >
+                <option value="" disabled className="bg-[#080710]">Select a course…</option>
+                {courses.map((c) => (
+                  <option key={c.course_uuid} value={c.course_uuid} className="bg-[#080710]">
+                    {c.course_name || c.course_link || `Course ${c.id}`}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div>
+            <FieldLabel>Student Email</FieldLabel>
+            <TextInput value={email} onChange={setEmail} placeholder="student@university.edu" type="email" />
+          </div>
+        </div>
+
+        {err && <p className="text-[#e8629a] text-sm">{err}</p>}
+
+        <div className="flex items-center justify-between">
+          {success && (
+            <span className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#9b7fe8] font-medium">
+              <CheckCircle2 size={12} /> Student added
+            </span>
+          )}
+          {!success && <span />}
+          <button
+            onClick={handleAdd}
+            disabled={!selectedCourse || !email || submitting}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#9b7fe8]/15 border border-[#9b7fe8]/30 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/25 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <UserPlus size={13} />
+            {submitting ? "Adding…" : "Add Student"}
+          </button>
+        </div>
+      </div>
+
+      {/* Enrolled students list */}
+      {(loadingCourses || enrolled.length > 0) && (
+        <>
+          <TableHeader cols={["Email", "Course", ""]} />
+          {loadingCourses
+            ? [1, 2].map((i) => <LoadingRow key={i} />)
+            : enrolled.map((s) => (
+                <div key={s.id} className="px-5 py-3.5 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.06] last:border-0">
+                  <div className="flex items-center gap-3">
+                    <Avatar initials={s.student_email.slice(0, 2).toUpperCase()} accent="violet" />
+                    <span className="text-white/60 text-sm truncate">{s.student_email}</span>
+                  </div>
+                  <span className="hidden sm:block text-white/40 text-sm truncate">{getCourseName(s.course_uuid)}</span>
+                  <div className="flex justify-end sm:justify-start">
+                    <button
+                      onClick={() => handleRemove(s.id)}
+                      className="text-white/25 hover:text-red-400 transition"
+                      title="Remove student"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))
+          }
+        </>
+      )}
+
+      {!loadingCourses && enrolled.length === 0 && (
+        <EmptyRow message="No students enrolled yet" />
+      )}
     </div>
   );
 }
@@ -449,7 +714,6 @@ export default function ClientDashboard() {
   const supabase = createClient();
 
   const [dbUser, setDbUser]                   = useState<DBUser | null>(null);
-  const [dbPlan, setDbPlan]                   = useState<DBPlan | null>(null);
   const [dbOrders, setDbOrders]               = useState<DBOrder[]>([]);
   const [openTickets, setOpenTickets]         = useState<DBTicket[]>([]);
   const [resolvedTickets, setResolvedTickets] = useState<DBTicket[]>([]);
@@ -459,7 +723,6 @@ export default function ClientDashboard() {
   const [submitOpen, setSubmitOpen]         = useState(false);
   const [selectedOrder, setSelectedOrder]   = useState<ModalOrder | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
-  const [planOpen, setPlanOpen]             = useState(false);
 
   useEffect(() => {
     async function fetchAll() {
@@ -470,9 +733,8 @@ export default function ClientDashboard() {
       if (!user) { setError("Not authenticated"); setLoading(false); return; }
 
       try {
-        const [userRes, planRes, ordersRes, openRes, resolvedRes] = await Promise.all([
+        const [userRes, ordersRes, openRes, resolvedRes] = await Promise.all([
           supabase.from("users").select("*").eq("user_uuid", user.id).limit(1).maybeSingle(),
-          supabase.from("plans").select("*").eq("user_uuid", user.id).maybeSingle(),
           supabase.from("orders").select("*").eq("user_uuid", user.id),
           supabase.from("tickets").select("*").eq("user_uuid", user.id).eq("resolved", 0),
           supabase.from("tickets").select("*").eq("user_uuid", user.id).eq("resolved", 1),
@@ -483,7 +745,6 @@ export default function ClientDashboard() {
         if (resolvedRes.error) throw new Error(`Resolved: ${resolvedRes.error.message}`);
 
         setDbUser(userRes.data ?? null);
-        setDbPlan(planRes.data ?? null);
         setDbOrders(ordersRes.data ?? []);
         setOpenTickets(openRes.data ?? []);
         setResolvedTickets(resolvedRes.data ?? []);
@@ -517,27 +778,22 @@ export default function ClientDashboard() {
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
-        <div className="text-center space-y-1">
-          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/30 text-base">{error}</p>
+        <div className="text-center space-y-2">
+          <p className="text-[#e8629a] text-sm uppercase tracking-[0.18em] font-medium">Error</p>
+          <p className="text-white/50 text-base">{error}</p>
         </div>
       </div>
     );
   }
 
-  const tierKey   = dbPlan?.plan_title ?? "Basic Tier";
-  const tierCfg   = TIER_ICONS[tierKey] ?? TIER_ICONS["Basic Tier"];
-  const TierIcon  = tierCfg.icon;
-  const planAccent = ACCENTS[tierCfg.accent];
-
   return (
-    <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto">
+    <div className="flex-1 px-5 sm:px-8 py-8 space-y-6 overflow-auto">
 
       {/* Modals */}
-      {submitOpen && dbUser && (
+      {submitOpen && (
         <SubmitTicketModal
-          userUuid={dbUser.user_uuid}
-          clientName={dbUser.client_name}
+          userUuid={dbUser?.user_uuid ?? ""}
+          clientName={dbUser?.client_name ?? ""}
           onClose={() => setSubmitOpen(false)}
           onSubmitted={handleTicketSubmitted}
         />
@@ -553,72 +809,56 @@ export default function ClientDashboard() {
       {selectedOrder && (
         <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
-      {planOpen && dbPlan && (
-        <PlanModal plan={dbPlan} onClose={() => setPlanOpen(false)} />
-      )}
 
       {/* Page header */}
-      <div className="pb-4 border-b border-white/[0.06]">
-        <p className="text-xs uppercase tracking-[0.22em] text-white/20 mb-1">FBX Technologies</p>
-        <h1 className="text-white/75 text-2xl font-light tracking-wide">
+      <div className="pb-5 border-b border-white/[0.08]">
+        <p className="text-sm uppercase tracking-[0.22em] text-white/30 mb-1 font-medium">FBX Technologies</p>
+        <h1 className="text-white/85 text-3xl font-light tracking-wide">
           {loading ? "Dashboard" : `Welcome, ${dbUser?.client_name ?? "Client"}`}
         </h1>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
-        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
-          <div className={`absolute inset-x-0 top-0 h-px ${planAccent.bg}`} />
-          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Current Plan</p>
+      <div className="grid grid-cols-2 gap-px bg-white/[0.06]">
+        <div className="relative bg-[#0d0c14] border border-white/[0.08] p-5 overflow-hidden hover:border-white/15 transition-colors duration-300">
+          <div className="absolute inset-x-0 top-0 h-px bg-[#9b7fe8]/15" />
+          <p className="text-sm uppercase tracking-[0.18em] text-white/40 font-medium mb-3">Active Orders</p>
           {loading
-            ? <div className="h-8 bg-white/5 rounded w-24 animate-pulse" />
-            : <p className={`text-2xl font-light ${planAccent.text} tabular-nums`}>{dbPlan?.plan_title ?? "—"}</p>
+            ? <div className="h-12 bg-white/10 rounded w-16 animate-pulse" />
+            : <p className="text-5xl font-light text-[#9b7fe8] tabular-nums">{String(dbOrders.length).padStart(2, "0")}</p>
           }
         </div>
-        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
-          <div className="absolute inset-x-0 top-0 h-px bg-[#7e8fb5]/10" />
-          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Active Orders</p>
+        <div className="relative bg-[#0d0c14] border border-white/[0.08] p-5 overflow-hidden hover:border-white/15 transition-colors duration-300">
+          <div className="absolute inset-x-0 top-0 h-px bg-[#e8629a]/15" />
+          <p className="text-sm uppercase tracking-[0.18em] text-white/40 font-medium mb-3">Open Tickets</p>
           {loading
-            ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
-            : <p className="text-4xl font-light text-[#7e8fb5] tabular-nums">{String(dbOrders.length).padStart(2, "0")}</p>
+            ? <div className="h-12 bg-white/10 rounded w-16 animate-pulse" />
+            : <p className="text-5xl font-light text-[#e8629a] tabular-nums">{String(openTickets.length).padStart(2, "0")}</p>
           }
         </div>
       </div>
 
-      {/* Current Plan */}
-      <SectionCard title="Your Plan" icon={TierIcon} accent={tierCfg.accent}>
-        {loading ? <LoadingRow /> : !dbPlan ? <EmptyRow message="No plan assigned" /> : (
-          <div
-            onClick={() => setPlanOpen(true)}
-            className="px-5 py-4 flex items-center justify-between gap-3 hover:bg-white/[0.015] transition-colors cursor-pointer group border-b border-white/[0.04]"
-          >
-            <div className="flex items-center gap-4">
-              <Avatar initials={getInitials(dbPlan.plan_title)} accent={tierCfg.accent} />
-              <div>
-                <p className={`text-sm font-medium ${planAccent.text}`}>{dbPlan.plan_title}</p>
-                {dbPlan.description && (
-                  <p className="text-xs text-white/25 mt-0.5 truncate max-w-[200px]">{dbPlan.description}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 text-sm tabular-nums">{dbPlan.price}<span className="text-white/20 text-xs">/mo</span></span>
-              <ExternalLink size={11} className={`${planAccent.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
-            </div>
-          </div>
-        )}
-        <div className="px-5 py-3 flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/15">Manage</span>
-          <div className="flex items-center gap-4">
-            <button className="text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-[#e8629a] transition">Cancel</button>
-            <button className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-[#9b7fe8] transition">
-              Upgrade <ChevronRight size={10} />
-            </button>
-          </div>
-        </div>
+      {/* ── Camp Application ── */}
+      <SectionCard title="Apply for a Camp" icon={Tent} accent="violet">
+        {loading
+          ? <LoadingRow />
+          : !dbUser
+          ? <EmptyRow message="Please log in to apply" />
+          : <CampApplicationSection clientUuid={dbUser.user_uuid} />
+        }
       </SectionCard>
 
-      {/* Orders & Tracking */}
+      {/* ── Student Enrollment ── */}
+      <SectionCard title="Enroll Students" icon={GraduationCap} accent="violet">
+        {loading
+          ? <LoadingRow />
+          : !dbUser
+          ? <EmptyRow message="Please log in to enroll students" />
+          : <AddStudentSection clientUuid={dbUser.user_uuid} />
+        }
+      </SectionCard>
+
+      {/* ── Orders & Tracking ── */}
       <SectionCard title="Orders & Tracking" icon={Package} count={dbOrders.length} accent="slate">
         <TableHeader cols={["Order", "Tracking", "Status"]} />
         {loading
@@ -631,24 +871,24 @@ export default function ClientDashboard() {
                 <div
                   key={o.id}
                   onClick={() => setSelectedOrder(toModalOrder(o))}
-                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar initials={getInitials(o.order_title)} accent="slate" />
                     <div className="min-w-0">
-                      <p className="text-white/60 text-sm truncate">{o.order_title}</p>
-                      <p className="text-white/20 text-xs">{o.price}</p>
+                      <p className="text-white/70 text-base truncate">{o.order_title}</p>
+                      <p className="text-white/35 text-sm">{o.price}</p>
                     </div>
                   </div>
                   <div className="hidden sm:flex items-center">
                     {o.tracking_number
                       ? <TrackingNumber value={o.tracking_number} />
-                      : <span className="text-white/15 text-xs">—</span>
+                      : <span className="text-white/25 text-sm">—</span>
                     }
                   </div>
                   <div className="flex items-center gap-2 justify-end sm:justify-start">
                     <StatusBadge status={status} />
-                    <ExternalLink size={11} className="text-[#7e8fb5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ExternalLink size={12} className="text-[#8e9fc5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
               );
@@ -656,24 +896,24 @@ export default function ClientDashboard() {
         }
       </SectionCard>
 
-      {/* Support — open new ticket */}
+      {/* ── Support ── */}
       <SectionCard title="Support" icon={TicketCheck} accent="pink">
         <div className="px-5 py-5 flex items-center justify-between">
           <div>
-            <p className="text-white/40 text-sm">Need help with something?</p>
-            <p className="text-white/20 text-xs mt-0.5">We typically respond within 24 hours.</p>
+            <p className="text-white/50 text-base">Need help with something?</p>
+            <p className="text-white/30 text-sm mt-0.5">We typically respond within 24 hours.</p>
           </div>
           <button
             onClick={() => setSubmitOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#e8629a]/10 border border-[#e8629a]/20 text-[#e8629a] text-[10px] uppercase tracking-[0.18em] hover:bg-[#e8629a]/15 transition flex-shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#e8629a]/15 border border-[#e8629a]/30 text-[#e8629a] text-xs uppercase tracking-[0.18em] hover:bg-[#e8629a]/25 transition flex-shrink-0"
           >
-            <TicketCheck size={12} />
+            <TicketCheck size={13} />
             Open Ticket
           </button>
         </div>
       </SectionCard>
 
-      {/* Open tickets */}
+      {/* ── Open Tickets ── */}
       <SectionCard title="My Tickets" icon={TicketCheck} count={openTickets.length} accent="pink">
         <TableHeader cols={["Title", "Details", "Status"]} />
         {loading
@@ -684,24 +924,24 @@ export default function ClientDashboard() {
               <div
                 key={t.id}
                 onClick={() => setSelectedTicket(t)}
-                className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
                   <Avatar initials={getInitials(t.title)} accent="pink" />
-                  <p className="text-white/60 text-sm truncate">{t.title}</p>
+                  <p className="text-white/70 text-base truncate">{t.title}</p>
                 </div>
-                <p className="hidden sm:block text-white/25 text-xs truncate">{t.ticket_details}</p>
+                <p className="hidden sm:block text-white/40 text-sm truncate">{t.ticket_details}</p>
                 <div className="flex items-center gap-1.5 justify-end sm:justify-start">
-                  <Clock size={10} className="text-[#e8629a]" />
-                  <span className="text-[10px] uppercase tracking-widest text-[#e8629a]/60">Open</span>
-                  <ExternalLink size={11} className="text-[#e8629a] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                  <Clock size={11} className="text-[#e8629a]" />
+                  <span className="text-[11px] uppercase tracking-widest text-[#e8629a]/70 font-medium">Open</span>
+                  <ExternalLink size={12} className="text-[#e8629a] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                 </div>
               </div>
             ))
         }
       </SectionCard>
 
-      {/* Resolved tickets */}
+      {/* ── Resolved Tickets ── */}
       {(loading || resolvedTickets.length > 0) && (
         <SectionCard title="Resolved Tickets" icon={CheckCircle2} count={resolvedTickets.length} accent="slate">
           <TableHeader cols={["Title", "Details", "Status"]} />
@@ -711,17 +951,17 @@ export default function ClientDashboard() {
                 <div
                   key={t.id}
                   onClick={() => setSelectedTicket(t)}
-                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group opacity-55"
+                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer group opacity-70"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar initials={getInitials(t.title)} accent="slate" />
-                    <p className="text-white/35 text-sm truncate line-through">{t.title}</p>
+                    <p className="text-white/50 text-base truncate line-through">{t.title}</p>
                   </div>
-                  <p className="hidden sm:block text-white/15 text-xs truncate">{t.ticket_details}</p>
+                  <p className="hidden sm:block text-white/25 text-sm truncate">{t.ticket_details}</p>
                   <div className="flex items-center gap-1.5 justify-end sm:justify-start">
-                    <CheckCircle2 size={10} className="text-[#7e8fb5]" />
-                    <span className="text-[10px] uppercase tracking-widest text-[#7e8fb5]">Resolved</span>
-                    <ExternalLink size={11} className="text-[#7e8fb5] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                    <CheckCircle2 size={11} className="text-[#8e9fc5]" />
+                    <span className="text-[11px] uppercase tracking-widest text-[#8e9fc5] font-medium">Resolved</span>
+                    <ExternalLink size={12} className="text-[#8e9fc5] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                   </div>
                 </div>
               ))
