@@ -47,6 +47,12 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
+  if (request.nextUrl.pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = user ? "/protected" : "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
   // TODO: Uncomment if statement after auth is implemented. turned off for easy testing
   // if (
   //   request.nextUrl.pathname !== "/" &&
