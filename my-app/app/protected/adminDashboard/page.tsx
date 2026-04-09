@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users,
   ShoppingCart,
@@ -8,6 +8,11 @@ import {
   ExternalLink,
   Building2,
   Plus,
+  X,
+  ChevronDown,
+  Package,
+  DollarSign,
+  Hash,
   LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -119,6 +124,204 @@ function EmptyRow({ message }: { message: string }) {
   );
 }
 
+// ─── ADD ORDER PANEL ──────────────────────────────────────────────────────────
+
+interface AddOrderPanelProps {
+  enterprises: DBUser[];
+  onAdd: (order: {
+    user_uuid: string;
+    order_title: string;
+    description: string;
+    price: string;
+    tracking_number: string;
+  }) => Promise<void>;
+  onCancel: () => void;
+}
+
+function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
+  const [selectedUuid, setSelectedUuid]   = useState("");
+  const [dropdownOpen, setDropdownOpen]   = useState(false);
+  const [orderTitle,   setOrderTitle]     = useState("");
+  const [description,  setDescription]   = useState("");
+  const [price,        setPrice]         = useState("");
+  const [tracking,     setTracking]      = useState("");
+  const [saving,       setSaving]        = useState(false);
+  const [error,        setError]         = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedEnterprise = enterprises.find((e) => e.user_uuid === selectedUuid);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  async function handleSubmit() {
+    if (!selectedUuid)  return setError("Please select an enterprise.");
+    if (!orderTitle.trim()) return setError("Order title is required.");
+    if (!tracking.trim())   return setError("Tracking number is required.");
+    setError(null);
+    setSaving(true);
+    try {
+      await onAdd({
+        user_uuid:       selectedUuid,
+        order_title:     orderTitle.trim(),
+        description:     description.trim(),
+        price:           price.trim(),
+        tracking_number: tracking.trim(),
+      });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to add order.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="border-b border-white/[0.06] bg-[#0a0913]">
+      {/* Panel header */}
+      <div className="px-5 py-3 flex items-center justify-between border-b border-white/[0.04]">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#7e8fb5]">New Order</span>
+        <button onClick={onCancel} className="text-white/20 hover:text-white/50 transition">
+          <X size={14} />
+        </button>
+      </div>
+
+      <div className="px-5 py-5 space-y-4">
+        {/* Enterprise dropdown */}
+        <div ref={dropdownRef} className="relative">
+          <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+            Enterprise
+          </label>
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] transition text-left"
+          >
+            {selectedEnterprise ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-5 h-5 rounded bg-[#4ecdc4]/10 flex items-center justify-center text-[9px] font-bold text-[#4ecdc4]">
+                  {getInitials(selectedEnterprise.client_name)}
+                </div>
+                <span className="text-white/70 text-sm">{selectedEnterprise.client_name}</span>
+              </div>
+            ) : (
+              <span className="text-white/20 text-sm">Select enterprise…</span>
+            )}
+            <ChevronDown
+              size={13}
+              className={`text-white/20 flex-shrink-0 transition-transform duration-150 ${dropdownOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[#110f1e] border border-white/[0.10] shadow-xl max-h-48 overflow-y-auto">
+              {enterprises.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-white/20 tracking-widest uppercase">No enterprises</div>
+              ) : (
+                enterprises.map((e) => (
+                  <button
+                    key={e.user_uuid}
+                    type="button"
+                    onClick={() => { setSelectedUuid(e.user_uuid); setDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/[0.04] transition text-left ${
+                      selectedUuid === e.user_uuid ? "bg-[#4ecdc4]/5" : ""
+                    }`}
+                  >
+                    <div className="w-6 h-6 rounded bg-[#4ecdc4]/10 flex items-center justify-center text-[9px] font-bold text-[#4ecdc4] flex-shrink-0">
+                      {getInitials(e.client_name)}
+                    </div>
+                    <span className={`text-sm ${selectedUuid === e.user_uuid ? "text-[#4ecdc4]" : "text-white/55"}`}>
+                      {e.client_name}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Order fields — 2-col grid */}
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><Package size={9} />Order Title <span className="text-[#e8629a]">*</span></span>
+            </label>
+            <input
+              value={orderTitle}
+              onChange={(e) => setOrderTitle(e.target.value)}
+              placeholder="e.g. Robot Unit #4"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><Hash size={9} />Tracking Number <span className="text-[#e8629a]">*</span></span>
+            </label>
+            <input
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              placeholder="e.g. 794644792798"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm font-mono placeholder:text-white/15 placeholder:font-sans transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><DollarSign size={9} />Price</span>
+            </label>
+            <input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="e.g. $12,000"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              Description
+            </label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional notes…"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-[#e8629a] text-xs tracking-wide">{error}</p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-[#7e8fb5]/10 border border-[#7e8fb5]/20 text-[#7e8fb5] text-[10px] uppercase tracking-[0.18em] hover:bg-[#7e8fb5]/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? "Saving…" : <><Plus size={11} />Add Order</>}
+          </button>
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-white/20 text-[10px] uppercase tracking-[0.18em] hover:text-white/40 transition"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function AdminHomepage() {
@@ -137,6 +340,7 @@ export default function AdminHomepage() {
   const [selectedEnterprise,   setSelectedEnterprise]   = useState<DBUser | null>(null);
   const [createEnterpriseOpen, setCreateEnterpriseOpen] = useState(false);
   const [newCredentials,       setNewCredentials]       = useState<{ name: string; email: string; password: string } | null>(null);
+  const [addOrderOpen,         setAddOrderOpen]         = useState(false);
 
   const enterprises = dbUsers.filter((u) => u.role === 3);
   const customers   = dbUsers.filter((u) => u.role === 2);
@@ -212,7 +416,25 @@ export default function AdminHomepage() {
     }
   }
 
-  // Re-fetch after a new enterprise is created so it appears immediately
+  async function handleAddOrder(orderData: {
+    user_uuid: string;
+    order_title: string;
+    description: string;
+    price: string;
+    tracking_number: string;
+  }) {
+    const { data, error } = await supabase
+      .from("orders")
+      .insert(orderData)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    if (data) {
+      setDbOrders((prev) => [...prev, data]);
+      setAddOrderOpen(false);
+    }
+  }
+
   async function handleEnterpriseCreated(name: string, email: string, password: string) {
     setNewCredentials({ name, email, password });
     const [usersRes, plansRes] = await Promise.all([
@@ -384,6 +606,29 @@ export default function AdminHomepage() {
 
       {/* Orders in Progress */}
       <SectionCard title="Orders in Progress" icon={ShoppingCart} count={dbOrders.length} accent="slate">
+
+        {/* Add order toggle */}
+        <div className="px-5 py-4 border-b border-white/[0.04]">
+          {!addOrderOpen ? (
+            <button
+              onClick={() => setAddOrderOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#7e8fb5]/10 border border-[#7e8fb5]/20 text-[#7e8fb5] text-[10px] uppercase tracking-[0.18em] hover:bg-[#7e8fb5]/15 transition"
+            >
+              <Plus size={12} />
+              Add Order
+            </button>
+          ) : null}
+        </div>
+
+        {/* Inline add-order form */}
+        {addOrderOpen && (
+          <AddOrderPanel
+            enterprises={enterprises}
+            onAdd={handleAddOrder}
+            onCancel={() => setAddOrderOpen(false)}
+          />
+        )}
+
         <TableHeader cols={["Profile", "Order", "Price"]} />
         {loading
           ? [1, 2].map((i) => <LoadingRow key={i} />)
@@ -407,39 +652,6 @@ export default function AdminHomepage() {
               );
             })}
       </SectionCard>
-
-      {/* Customers (role 2 = student) */}
-      <SectionCard title="Teachers" icon={Users} count={customers.length} accent="violet">
-        <TableHeader cols={["Profile", "Name", "Plan"]} />
-        {loading
-          ? [1, 2, 3].map((i) => <LoadingRow key={i} />)
-          : customers.length === 0
-          ? <EmptyRow message="No customers" />
-          : customers.map((u) => {
-              const plan = getPlanForUser(u.user_uuid);
-              return (
-                <div
-                  key={u.id}
-                  onClick={() => plan && setSelectedPlan(plan)}
-                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
-                >
-                  <Avatar initials={getInitials(u.client_name)} color="violet" />
-                  <span className="text-white/60 text-sm truncate">{u.client_name}</span>
-                  <div className="flex items-center gap-1.5">
-                    {plan ? (
-                      <>
-                        <span className="text-sm text-white/35 truncate">${plan.price.toLocaleString()}</span>
-                        <ExternalLink size={11} className="text-[#9b7fe8] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </>
-                    ) : (
-                      <span className="text-sm text-white/15">—</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-      </SectionCard>
-
     </div>
   );
 }
