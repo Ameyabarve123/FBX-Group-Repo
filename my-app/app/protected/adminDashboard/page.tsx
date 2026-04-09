@@ -1,70 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users,
   ShoppingCart,
   TicketCheck,
   ExternalLink,
-  GraduationCap,
+  Building2,
   Plus,
-  Copy,
-  Check,
+  X,
+  ChevronDown,
+  Package,
+  DollarSign,
+  Hash,
   LucideIcon,
 } from "lucide-react";
-import TicketModal from "@/components/dashboardComponents/ticketModal";
-import PlanModal from "@/components/dashboardComponents/planModal";
-import OrderModal from "@/components/dashboardComponents/orderModal";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
-
-interface DBUser {
-  id: string;
-  client_name: string;
-  is_admin: boolean;
-  user_uuid: string;
-  role: number;
-}
-
-interface DBTicket {
-  id: string;
-  title: string;
-  contact_details: string;
-  ticket_details: string;
-  client_name: string;
-  user_uuid: string;
-}
-
-interface DBOrder {
-  id: string;
-  order_title: string;
-  description: string;
-  price: string;
-  tracking_number: string;
-  user_uuid: string;
-}
-
-interface DBPlan {
-  id: string;
-  plan_title: string;
-  description: string;
-  price: string;
-  user_uuid: string;
-}
-
-interface AvatarProps {
-  initials: string;
-  color?: "pink" | "violet" | "slate";
-}
-
-interface SectionCardProps {
-  title: string;
-  icon: LucideIcon;
-  count?: number;
-  children: React.ReactNode;
-  accent?: "pink" | "violet" | "slate";
-}
+import TicketModal           from "@/components/dashboardComponents/ticketModal";
+import PlanModal             from "@/components/dashboardComponents/planModal";
+import OrderModal            from "@/components/dashboardComponents/orderModal";
+import CredentialsModal      from "@/components/dashboardComponents/credentialsModal";
+import CreateEnterpriseModal from "@/components/dashboardComponents/createEnterpriseModal";
+import EnterprisePlanModal   from "@/components/dashboardComponents/enterprisePlanModal";
+import type { DBUser, DBTicket, DBOrder, DBPlan } from "@/components/dashboardComponents/types";
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -73,24 +32,21 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function generatePassword(length = 12): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
-
 const ACCENTS = {
-  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20", hex: "#e8629a" },
-  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20", hex: "#9b7fe8" },
-  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10", border: "border-[#7e8fb5]/20", hex: "#7e8fb5" },
+  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10" },
+  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10" },
+  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10" },
+  teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10" },
 };
 
-// ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
+// ─── SMALL UI PIECES ──────────────────────────────────────────────────────────
 
-function Avatar({ initials, color = "pink" }: AvatarProps) {
-  const styles = {
+function Avatar({ initials, color = "pink" }: { initials: string; color?: keyof typeof ACCENTS }) {
+  const styles: Record<keyof typeof ACCENTS, string> = {
     pink:   "bg-[#e8629a]/10 text-[#e8629a] ring-1 ring-[#e8629a]/25",
     violet: "bg-[#9b7fe8]/10 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/25",
     slate:  "bg-[#7e8fb5]/10 text-[#7e8fb5] ring-1 ring-[#7e8fb5]/25",
+    teal:   "bg-[#4ecdc4]/10 text-[#4ecdc4] ring-1 ring-[#4ecdc4]/25",
   };
   return (
     <div className={`w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 ${styles[color]}`}>
@@ -99,7 +55,7 @@ function Avatar({ initials, color = "pink" }: AvatarProps) {
   );
 }
 
-function StatCard({ label, value, accent = "violet" }: { label: string; value: string; accent?: "pink" | "violet" | "slate" }) {
+function StatCard({ label, value, accent = "violet" }: { label: string; value: string; accent?: keyof typeof ACCENTS }) {
   const a = ACCENTS[accent];
   return (
     <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
@@ -110,7 +66,12 @@ function StatCard({ label, value, accent = "violet" }: { label: string; value: s
   );
 }
 
-function SectionCard({ title, icon: Icon, count, children, accent = "violet" }: SectionCardProps) {
+function SectionCard({
+  title, icon: Icon, count, children, accent = "violet",
+}: {
+  title: string; icon: LucideIcon; count?: number;
+  children: React.ReactNode; accent?: keyof typeof ACCENTS;
+}) {
   const a = ACCENTS[accent];
   return (
     <div className="bg-[#0d0c14] border border-white/[0.06]">
@@ -132,8 +93,10 @@ function SectionCard({ title, icon: Icon, count, children, accent = "violet" }: 
 
 function TableHeader({ cols }: { cols: string[] }) {
   return (
-    <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
-      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
+    <div
+      className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
+      style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}
+    >
       {cols.map((c) => (
         <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
       ))}
@@ -161,161 +124,197 @@ function EmptyRow({ message }: { message: string }) {
   );
 }
 
-// ─── COPY FIELD ───────────────────────────────────────────────────────────────
+// ─── ADD ORDER PANEL ──────────────────────────────────────────────────────────
 
-function CopyField({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  function handleCopy() {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
-      <div className="flex items-center justify-between gap-3 bg-[#080710] border border-white/[0.06] px-4 py-3">
-        <span className="text-sm text-white/60 font-mono truncate">{value}</span>
-        <button onClick={handleCopy} className="flex-shrink-0 text-white/20 hover:text-[#9b7fe8] transition-colors">
-          {copied ? <Check size={13} className="text-[#9b7fe8]" /> : <Copy size={13} />}
-        </button>
-      </div>
-    </div>
-  );
+interface AddOrderPanelProps {
+  enterprises: DBUser[];
+  onAdd: (order: {
+    user_uuid: string;
+    order_title: string;
+    description: string;
+    price: string;
+    tracking_number: string;
+  }) => Promise<void>;
+  onCancel: () => void;
 }
 
-// ─── CREDENTIALS MODAL ────────────────────────────────────────────────────────
+function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
+  const [selectedUuid, setSelectedUuid]   = useState("");
+  const [dropdownOpen, setDropdownOpen]   = useState(false);
+  const [orderTitle,   setOrderTitle]     = useState("");
+  const [description,  setDescription]   = useState("");
+  const [price,        setPrice]         = useState("");
+  const [tracking,     setTracking]      = useState("");
+  const [saving,       setSaving]        = useState(false);
+  const [error,        setError]         = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-function CredentialsModal({
-  name, email, password, onClose,
-}: {
-  name: string;
-  email: string;
-  password: string;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+  const selectedEnterprise = enterprises.find((e) => e.user_uuid === selectedUuid);
 
-        <div className="flex items-center gap-3">
-          <GraduationCap size={14} className="text-[#9b7fe8]" />
-          <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Teacher Account Created</span>
-        </div>
-
-        <p className="text-white/25 text-xs leading-relaxed">
-          Share these credentials with the teacher. The password will not be shown again.
-        </p>
-
-        <div className="space-y-3">
-          <CopyField label="Name"     value={name}     />
-          <CopyField label="Email"    value={email}    />
-          <CopyField label="Password" value={password} />
-        </div>
-
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition"
-        >
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── CREATE TEACHER MODAL ─────────────────────────────────────────────────────
-
-function CreateTeacherModal({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: (name: string, email: string, password: string) => void;
-}) {
-  const [name,       setName]       = useState("");
-  const [email,      setEmail]      = useState("");
-  const [password,   setPassword]   = useState(generatePassword());
-  const [submitting, setSubmitting] = useState(false);
-  const [err,        setErr]        = useState<string | null>(null);
-
-  async function handleCreate() {
-    if (!name || !email || !password) return;
-    setSubmitting(true);
-    setErr(null);
-
-    try {
-      // Create the auth user via your API route (needs service-role key)
-      const res = await fetch("/api/admin/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(error ?? "Failed to create account");
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
       }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
-      onCreated(name, email, password);
-      onClose();
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setSubmitting(false);
+  async function handleSubmit() {
+    if (!selectedUuid)  return setError("Please select an enterprise.");
+    if (!orderTitle.trim()) return setError("Order title is required.");
+    if (!tracking.trim())   return setError("Tracking number is required.");
+    setError(null);
+    setSaving(true);
+    try {
+      await onAdd({
+        user_uuid:       selectedUuid,
+        order_title:     orderTitle.trim(),
+        description:     description.trim(),
+        price:           price.trim(),
+        tracking_number: tracking.trim(),
+      });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to add order.");
+      setSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-md w-full shadow-2xl flex flex-col gap-5">
+    <div className="border-b border-white/[0.06] bg-[#0a0913]">
+      {/* Panel header */}
+      <div className="px-5 py-3 flex items-center justify-between border-b border-white/[0.04]">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#7e8fb5]">New Order</span>
+        <button onClick={onCancel} className="text-white/20 hover:text-white/50 transition">
+          <X size={14} />
+        </button>
+      </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <GraduationCap size={14} className="text-[#9b7fe8]" />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">Create Teacher Account</span>
-          </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition text-lg leading-none">×</button>
-        </div>
+      <div className="px-5 py-5 space-y-4">
+        {/* Enterprise dropdown */}
+        <div ref={dropdownRef} className="relative">
+          <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+            Enterprise
+          </label>
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] transition text-left"
+          >
+            {selectedEnterprise ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-5 h-5 rounded bg-[#4ecdc4]/10 flex items-center justify-center text-[9px] font-bold text-[#4ecdc4]">
+                  {getInitials(selectedEnterprise.client_name)}
+                </div>
+                <span className="text-white/70 text-sm">{selectedEnterprise.client_name}</span>
+              </div>
+            ) : (
+              <span className="text-white/20 text-sm">Select enterprise…</span>
+            )}
+            <ChevronDown
+              size={13}
+              className={`text-white/20 flex-shrink-0 transition-transform duration-150 ${dropdownOpen ? "rotate-180" : ""}`}
+            />
+          </button>
 
-        <div className="space-y-3">
-          {[
-            { label: "Client Name",  value: name,     setter: setName,     placeholder: "e.g. Jane Smith",        type: "text"     },
-            { label: "Email",      value: email,    setter: setEmail,    placeholder: "e.g. jane@school.com",   type: "email"    },
-            { label: "Password",   value: password, setter: setPassword, placeholder: "Auto-generated",         type: "text"     },
-          ].map(({ label, value, setter, placeholder, type }) => (
-            <div key={label}>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
-              <input
-                type={type}
-                value={value}
-                onChange={(e) => setter(e.target.value)}
-                placeholder={placeholder}
-                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition font-mono"
-              />
+          {dropdownOpen && (
+            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[#110f1e] border border-white/[0.10] shadow-xl max-h-48 overflow-y-auto">
+              {enterprises.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-white/20 tracking-widest uppercase">No enterprises</div>
+              ) : (
+                enterprises.map((e) => (
+                  <button
+                    key={e.user_uuid}
+                    type="button"
+                    onClick={() => { setSelectedUuid(e.user_uuid); setDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/[0.04] transition text-left ${
+                      selectedUuid === e.user_uuid ? "bg-[#4ecdc4]/5" : ""
+                    }`}
+                  >
+                    <div className="w-6 h-6 rounded bg-[#4ecdc4]/10 flex items-center justify-center text-[9px] font-bold text-[#4ecdc4] flex-shrink-0">
+                      {getInitials(e.client_name)}
+                    </div>
+                    <span className={`text-sm ${selectedUuid === e.user_uuid ? "text-[#4ecdc4]" : "text-white/55"}`}>
+                      {e.client_name}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
-          ))}
-          {err && <p className="text-[#e8629a] text-xs">{err}</p>}
+          )}
         </div>
 
+        {/* Order fields — 2-col grid */}
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><Package size={9} />Order Title <span className="text-[#e8629a]">*</span></span>
+            </label>
+            <input
+              value={orderTitle}
+              onChange={(e) => setOrderTitle(e.target.value)}
+              placeholder="e.g. Robot Unit #4"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><Hash size={9} />Tracking Number <span className="text-[#e8629a]">*</span></span>
+            </label>
+            <input
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              placeholder="e.g. 794644792798"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm font-mono placeholder:text-white/15 placeholder:font-sans transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              <span className="flex items-center gap-1.5"><DollarSign size={9} />Price</span>
+            </label>
+            <input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="e.g. $12,000"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.18em] text-white/25 mb-1.5">
+              Description
+            </label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional notes…"
+              className="w-full px-3 py-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#7e8fb5]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/15 transition"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-[#e8629a] text-xs tracking-wide">{error}</p>
+        )}
+
+        {/* Actions */}
         <div className="flex items-center gap-2 pt-1">
           <button
-            onClick={() => setPassword(generatePassword())}
-            className="text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-white/40 transition px-3 py-2 border border-white/[0.06] hover:border-white/10"
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-[#7e8fb5]/10 border border-[#7e8fb5]/20 text-[#7e8fb5] text-[10px] uppercase tracking-[0.18em] hover:bg-[#7e8fb5]/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Regenerate
-          </button>
-          <button onClick={onClose} className="flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-white/10 transition">
-            Cancel
+            {saving ? "Saving…" : <><Plus size={11} />Add Order</>}
           </button>
           <button
-            onClick={handleCreate}
-            disabled={!name || !email || !password || submitting}
-            className="flex-1 py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-xs uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={onCancel}
+            className="px-4 py-2 text-white/20 text-[10px] uppercase tracking-[0.18em] hover:text-white/40 transition"
           >
-            {submitting ? "Creating…" : "Create"}
+            Cancel
           </button>
         </div>
       </div>
@@ -323,7 +322,7 @@ function CreateTeacherModal({
   );
 }
 
-// ─── PAGE COMPONENT ───────────────────────────────────────────────────────────
+// ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function AdminHomepage() {
   const supabase = createClient();
@@ -335,16 +334,18 @@ export default function AdminHomepage() {
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
 
-  const [selectedTicket, setSelectedTicket] = useState<DBTicket | null>(null);
-  const [selectedPlan,   setSelectedPlan]   = useState<DBPlan | null>(null);
-  const [selectedOrder,  setSelectedOrder]  = useState<DBOrder | null>(null);
+  const [selectedTicket,       setSelectedTicket]       = useState<DBTicket | null>(null);
+  const [selectedPlan,         setSelectedPlan]         = useState<DBPlan | null>(null);
+  const [selectedOrder,        setSelectedOrder]        = useState<DBOrder | null>(null);
+  const [selectedEnterprise,   setSelectedEnterprise]   = useState<DBUser | null>(null);
+  const [createEnterpriseOpen, setCreateEnterpriseOpen] = useState(false);
+  const [newCredentials,       setNewCredentials]       = useState<{ name: string; email: string; password: string } | null>(null);
+  const [addOrderOpen,         setAddOrderOpen]         = useState(false);
 
-  const [createTeacherOpen, setCreateTeacherOpen] = useState(false);
-  const [newCredentials, setNewCredentials] = useState<{ name: string; email: string; password: string } | null>(null);
+  const enterprises = dbUsers.filter((u) => u.role === 3);
+  const customers   = dbUsers.filter((u) => u.role === 2);
 
-  // Derived: teachers are users with role === 0
-  const teachers = dbUsers.filter((u) => u.role === 0);
-
+  // ── Fetch all data ─────────────────────────────────────────────────────────
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
@@ -353,15 +354,15 @@ export default function AdminHomepage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError("Not authenticated"); setLoading(false); return; }
 
-      const { data: adminCheck, error: adminError } = await supabase
+      const { data: adminCheck, error: adminErr } = await supabase
         .from("users").select("is_admin").eq("user_uuid", user.id).single();
-      if (adminError || !adminCheck || adminCheck.is_admin !== 1) {
+      if (adminErr || !adminCheck || adminCheck.is_admin !== 1) {
         setError("Access denied"); setLoading(false); return;
       }
 
       try {
         const [usersRes, ticketsRes, ordersRes, plansRes] = await Promise.all([
-          supabase.from("users").select("*").eq('role', 0),
+          supabase.from("users").select("*"),
           supabase.from("tickets").select("*"),
           supabase.from("orders").select("*"),
           supabase.from("plans").select("*"),
@@ -384,6 +385,7 @@ export default function AdminHomepage() {
     fetchAll();
   }, []);
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
   function getPlanForUser(userUuid: string): DBPlan | undefined {
     return dbPlans.find((p) => p.user_uuid === userUuid);
   }
@@ -395,10 +397,55 @@ export default function AdminHomepage() {
     setSelectedTicket(null);
   }
 
-  function handleTeacherCreated(name: string, email: string, password: string) {
-    setNewCredentials({ name, email, password });
+  async function handleSavePlan(updated: Partial<DBPlan>) {
+    if (!selectedEnterprise) return;
+    const existing = getPlanForUser(selectedEnterprise.user_uuid);
+
+    if (existing) {
+      const { error } = await supabase.from("plans").update(updated).eq("id", existing.id);
+      if (error) { console.error("Failed to update plan:", error.message); return; }
+      setDbPlans((prev) => prev.map((p) => p.id === existing.id ? { ...p, ...updated } : p));
+    } else {
+      const { data, error } = await supabase
+        .from("plans")
+        .insert({ ...updated, user_uuid: selectedEnterprise.user_uuid })
+        .select()
+        .single();
+      if (error) { console.error("Failed to create plan:", error.message); return; }
+      if (data) setDbPlans((prev) => [...prev, data]);
+    }
   }
 
+  async function handleAddOrder(orderData: {
+    user_uuid: string;
+    order_title: string;
+    description: string;
+    price: string;
+    tracking_number: string;
+  }) {
+    const { data, error } = await supabase
+      .from("orders")
+      .insert(orderData)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    if (data) {
+      setDbOrders((prev) => [...prev, data]);
+      setAddOrderOpen(false);
+    }
+  }
+
+  async function handleEnterpriseCreated(name: string, email: string, password: string) {
+    setNewCredentials({ name, email, password });
+    const [usersRes, plansRes] = await Promise.all([
+      supabase.from("users").select("*"),
+      supabase.from("plans").select("*"),
+    ]);
+    if (!usersRes.error) setDbUsers(usersRes.data ?? []);
+    if (!plansRes.error) setDbPlans(plansRes.data ?? []);
+  }
+
+  // ── Error state ────────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
@@ -410,33 +457,56 @@ export default function AdminHomepage() {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto bg-[#080710] min-h-screen">
 
       {/* Modals */}
       {selectedTicket && (
         <TicketModal
-          ticket={{ title: selectedTicket.title, name: selectedTicket.client_name, contact: selectedTicket.contact_details, details: selectedTicket.ticket_details }}
+          ticket={{
+            title:   selectedTicket.title,
+            name:    selectedTicket.client_name,
+            contact: selectedTicket.contact_details,
+            details: selectedTicket.ticket_details,
+          }}
           onClose={() => setSelectedTicket(null)}
           onResolve={() => handleResolve(selectedTicket)}
         />
       )}
       {selectedPlan && (
         <PlanModal
-          plan={{ title: selectedPlan.plan_title, description: selectedPlan.description, price: selectedPlan.price }}
+          plan={{
+            title:       selectedPlan.description,
+            description: selectedPlan.description,
+            price:       String(selectedPlan.price),
+          }}
           onClose={() => setSelectedPlan(null)}
         />
       )}
       {selectedOrder && (
         <OrderModal
-          order={{ title: selectedOrder.order_title, description: selectedOrder.description, price: selectedOrder.price, trackingNumber: selectedOrder.tracking_number }}
+          order={{
+            title:          selectedOrder.order_title,
+            description:    selectedOrder.description,
+            price:          selectedOrder.price,
+            trackingNumber: selectedOrder.tracking_number,
+          }}
           onClose={() => setSelectedOrder(null)}
         />
       )}
-      {createTeacherOpen && (
-        <CreateTeacherModal
-          onClose={() => setCreateTeacherOpen(false)}
-          onCreated={handleTeacherCreated}
+      {selectedEnterprise && (
+        <EnterprisePlanModal
+          enterprise={selectedEnterprise}
+          plan={getPlanForUser(selectedEnterprise.user_uuid)}
+          onClose={() => setSelectedEnterprise(null)}
+          onSave={handleSavePlan}
+        />
+      )}
+      {createEnterpriseOpen && (
+        <CreateEnterpriseModal
+          onClose={() => setCreateEnterpriseOpen(false)}
+          onCreated={handleEnterpriseCreated}
         />
       )}
       {newCredentials && (
@@ -456,101 +526,132 @@ export default function AdminHomepage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-px bg-white/[0.04]">
-        <StatCard label="Customers"    value={String(dbUsers.length).padStart(2, "0")}   accent="violet" />
-        <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")} accent="pink"   />
-        <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}  accent="slate"  />
+        <StatCard label="Enterprise"   value={String(enterprises.length).padStart(2, "0")} accent="teal"  />
+        <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")}   accent="pink"  />
+        <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}    accent="slate" />
       </div>
 
-      {/* Customers */}
-      <SectionCard title="Customers" icon={Users} count={dbUsers.length} accent="violet">
-        <TableHeader cols={["Profile", "Name", "Plan"]} />
-        {loading ? [1,2,3].map(i => <LoadingRow key={i} />) :
-         dbUsers.length === 0 ? <EmptyRow message="No customers" /> :
-         dbUsers.map((u) => {
-           const plan = getPlanForUser(u.user_uuid);
-           return (
-             <div key={u.id} onClick={() => plan && setSelectedPlan(plan)}
-               className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
-               <Avatar initials={getInitials(u.client_name)} color="violet" />
-               <div className="flex items-center gap-2 min-w-0">
-                 <span className="text-white/60 text-sm truncate">{u.client_name}</span>
-               </div>
-               <div className="flex items-center gap-1.5">
-                 {plan
-                   ? <><span className="text-sm text-white/35 truncate">{plan.plan_title}</span>
-                       <ExternalLink size={11} className="text-[#9b7fe8] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" /></>
-                   : <span className="text-sm text-white/15">—</span>}
-               </div>
-             </div>
-           );
-         })}
-      </SectionCard>
-
-      {/* Tickets */}
-      <SectionCard title="Support Tickets" icon={TicketCheck} count={dbTickets.length} accent="pink">
-        <TableHeader cols={["Profile", "Client", "Title"]} />
-        {loading ? [1,2].map(i => <LoadingRow key={i} />) :
-         dbTickets.length === 0 ? <EmptyRow message="No open tickets" /> :
-         dbTickets.map((t) => (
-           <div key={t.id} onClick={() => setSelectedTicket(t)}
-             className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
-             <Avatar initials={getInitials(t.client_name)} color="pink" />
-             <span className="text-white/60 text-sm truncate">{t.client_name}</span>
-             <div className="flex items-center gap-1.5">
-               <span className="text-sm text-white/35 truncate hidden sm:block">{t.title}</span>
-               <ExternalLink size={11} className="text-[#e8629a] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-             </div>
-           </div>
-         ))}
-      </SectionCard>
-
-      {/* Orders */}
-      <SectionCard title="Orders in Progress" icon={ShoppingCart} count={dbOrders.length} accent="slate">
-        <TableHeader cols={["Profile", "Order", "Price"]} />
-        {loading ? [1,2].map(i => <LoadingRow key={i} />) :
-         dbOrders.length === 0 ? <EmptyRow message="No active orders" /> :
-         dbOrders.map((o) => {
-           const owner = dbUsers.find((u) => u.user_uuid === o.user_uuid);
-           return (
-             <div key={o.id} onClick={() => setSelectedOrder(o)}
-               className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group">
-               <Avatar initials={getInitials(owner?.client_name ?? "?")} color="slate" />
-               <span className="text-white/60 text-sm truncate">{o.order_title}</span>
-               <div className="flex items-center gap-1.5">
-                 <span className="text-sm text-white/35">{o.price}</span>
-                 <ExternalLink size={11} className="text-[#7e8fb5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-               </div>
-             </div>
-           );
-         })}
-      </SectionCard>
-
-      {/* Teachers */}
-      <SectionCard title="Teachers" icon={GraduationCap} count={teachers.length} accent="violet">
-        <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.04]">
+      {/* Enterprise Accounts */}
+      <SectionCard title="Enterprise Accounts" icon={Building2} count={enterprises.length} accent="teal">
+        <div className="px-5 py-4 border-b border-white/[0.04]">
           <button
-            onClick={() => setCreateTeacherOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition flex-shrink-0"
+            onClick={() => setCreateEnterpriseOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-[10px] uppercase tracking-[0.18em] hover:bg-[#4ecdc4]/15 transition"
           >
             <Plus size={12} />
-            New Teacher
+            New Enterprise
           </button>
         </div>
-        <TableHeader cols={["Profile", "Name", "Role"]} />
-        {loading ? [1, 2].map(i => <LoadingRow key={i} />) :
-         teachers.length === 0 ? <EmptyRow message="No teacher accounts" /> :
-         teachers.map((u) => (
-           <div key={u.id}
-             className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0">
-             <Avatar initials={getInitials(u.client_name)} color="violet" />
-             <span className="text-white/60 text-sm truncate">{u.client_name}</span>
-             <span className="text-[10px] uppercase tracking-widest text-[#9b7fe8] bg-[#9b7fe8]/10 px-2 py-0.5 border border-[#9b7fe8]/20 w-fit">
-               Teacher
-             </span>
-           </div>
-         ))}
+        <TableHeader cols={["Profile", "Company", "Price", "Robots"]} />
+        {loading
+          ? [1, 2, 3].map((i) => <LoadingRow key={i} />)
+          : enterprises.length === 0
+          ? <EmptyRow message="No enterprise accounts" />
+          : enterprises.map((u) => {
+              const plan    = getPlanForUser(u.user_uuid);
+              const shipped = plan?.robots_shipped   ?? 0;
+              const total   = plan?.robots_allocated ?? 0;
+              const pct     = total > 0 ? Math.min(100, Math.round((shipped / total) * 100)) : 0;
+              return (
+                <div
+                  key={u.id}
+                  onClick={() => setSelectedEnterprise(u)}
+                  className="px-5 py-4 grid sm:grid-cols-4 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                >
+                  <Avatar initials={getInitials(u.client_name)} color="teal" />
+                  <span className="text-white/60 text-sm truncate">{u.client_name}</span>
+                  <span className="text-sm text-white/35">
+                    {plan ? `$${plan.price.toLocaleString()}` : <span className="text-white/15">—</span>}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {total > 0 ? (
+                      <>
+                        <div className="flex-1 h-1 bg-white/[0.06] overflow-hidden">
+                          <div className="h-full bg-[#4ecdc4] transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0">{shipped}/{total}</span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-white/15">—</span>
+                    )}
+                    <ExternalLink size={11} className="text-[#4ecdc4] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              );
+            })}
       </SectionCard>
 
+      {/* Support Tickets */}
+      <SectionCard title="Support Tickets" icon={TicketCheck} count={dbTickets.length} accent="pink">
+        <TableHeader cols={["Profile", "Client", "Title"]} />
+        {loading
+          ? [1, 2].map((i) => <LoadingRow key={i} />)
+          : dbTickets.length === 0
+          ? <EmptyRow message="No open tickets" />
+          : dbTickets.map((t) => (
+              <div
+                key={t.id}
+                onClick={() => setSelectedTicket(t)}
+                className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+              >
+                <Avatar initials={getInitials(t.client_name)} color="pink" />
+                <span className="text-white/60 text-sm truncate">{t.client_name}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-white/35 truncate hidden sm:block">{t.title}</span>
+                  <ExternalLink size={11} className="text-[#e8629a] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+            ))}
+      </SectionCard>
+
+      {/* Orders in Progress */}
+      <SectionCard title="Orders in Progress" icon={ShoppingCart} count={dbOrders.length} accent="slate">
+
+        {/* Add order toggle */}
+        <div className="px-5 py-4 border-b border-white/[0.04]">
+          {!addOrderOpen ? (
+            <button
+              onClick={() => setAddOrderOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#7e8fb5]/10 border border-[#7e8fb5]/20 text-[#7e8fb5] text-[10px] uppercase tracking-[0.18em] hover:bg-[#7e8fb5]/15 transition"
+            >
+              <Plus size={12} />
+              Add Order
+            </button>
+          ) : null}
+        </div>
+
+        {/* Inline add-order form */}
+        {addOrderOpen && (
+          <AddOrderPanel
+            enterprises={enterprises}
+            onAdd={handleAddOrder}
+            onCancel={() => setAddOrderOpen(false)}
+          />
+        )}
+
+        <TableHeader cols={["Profile", "Order", "Price"]} />
+        {loading
+          ? [1, 2].map((i) => <LoadingRow key={i} />)
+          : dbOrders.length === 0
+          ? <EmptyRow message="No active orders" />
+          : dbOrders.map((o) => {
+              const owner = dbUsers.find((u) => u.user_uuid === o.user_uuid);
+              return (
+                <div
+                  key={o.id}
+                  onClick={() => setSelectedOrder(o)}
+                  className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                >
+                  <Avatar initials={getInitials(owner?.client_name ?? "?")} color="slate" />
+                  <span className="text-white/60 text-sm truncate">{o.order_title}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-white/35">{o.price}</span>
+                    <ExternalLink size={11} className="text-[#7e8fb5] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              );
+            })}
+      </SectionCard>
     </div>
   );
 }
