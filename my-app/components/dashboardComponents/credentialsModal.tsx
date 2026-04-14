@@ -20,14 +20,14 @@ function CopyField({ label, value }: { label: string; value: string }) {
   }
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
-      <div className="flex items-center justify-between gap-3 bg-[#080710] border border-white/[0.06] px-4 py-3">
-        <span className="text-sm text-white/60 font-mono truncate">{value}</span>
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">{label}</p>
+      <div className="flex items-center justify-between gap-3 bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 hover:border-white/[0.14] transition">
+        <span className="text-sm text-white/70 font-mono truncate">{value}</span>
         <button
           onClick={handleCopy}
-          className="flex-shrink-0 text-white/20 hover:text-[#9b7fe8] transition-colors"
+          className="flex-shrink-0 text-white/50 hover:text-[#629fcc] transition-colors"
         >
-          {copied ? <Check size={13} className="text-[#9b7fe8]" /> : <Copy size={13} />}
+          {copied ? <Check size={13} className="text-[#629fcc]" /> : <Copy size={13} />}
         </button>
       </div>
     </div>
@@ -37,15 +37,15 @@ function CopyField({ label, value }: { label: string; value: string }) {
 export default function CredentialsModal({ name, email, password, onClose }: CredentialsModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.125] rounded-lg p-6 max-w-sm w-full shadow-2xl flex flex-col gap-5">
         <div className="flex items-center gap-3">
-          <Building2 size={14} className="text-[#4ecdc4]" />
-          <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">
+          <Building2 size={14} className="text-[#629fcc]" />
+          <span className="text-white/50 text-xs font-bold uppercase tracking-[0.18em]">
             Enterprise Account Created
           </span>
         </div>
-        <p className="text-white/25 text-xs leading-relaxed">
+        <p className="text-white/50 text-xs leading-relaxed">
           Share these credentials with the enterprise contact. The password will not be shown again.
         </p>
         <div className="space-y-3">
@@ -55,7 +55,7 @@ export default function CredentialsModal({ name, email, password, onClose }: Cre
         </div>
         <button
           onClick={onClose}
-          className="w-full py-2.5 bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-xs uppercase tracking-[0.18em] hover:bg-[#4ecdc4]/15 transition"
+          className="w-full py-2.5 rounded-lg bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition"
         >
           Done
         </button>

@@ -24,58 +24,57 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
   const [err,        setErr]        = useState<string | null>(null);
 
   async function handleCreate() {
-  if (!name || !email || !password) return;
-  setSubmitting(true);
-  setErr(null);
+    if (!name || !email || !password) return;
+    setSubmitting(true);
+    setErr(null);
 
-  try {
-    // Get the current session token
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session) throw new Error("Not authenticated");
+      if (!session) throw new Error("Not authenticated");
 
-    const res = await fetch("/api/admin/create-enterprise", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`,  // <-- attach token
-      },
-      body: JSON.stringify({ name, email, password }),
-    });
+      const res = await fetch("/api/admin/create-enterprise", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: "Unknown error" }));
-      throw new Error(body.error ?? "Failed to create account");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(body.error ?? "Failed to create account");
+      }
+
+      onCreated(name, email, password);
+      onClose();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-
-    onCreated(name, email, password);
-    onClose();
-  } catch (e: unknown) {
-    setErr(e instanceof Error ? e.message : "Something went wrong");
-  } finally {
-    setSubmitting(false);
   }
-}
 
   const fieldClass =
-    "w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 " +
-    "placeholder:text-white/15 outline-none focus:border-white/10 transition font-mono";
+    "w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-sm text-white/70 " +
+    "placeholder:text-white/50 outline-none hover:border-white/[0.14] focus:border-[#91bee3]/40 transition font-mono";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#080710]/90 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-[#0d0c14] border border-white/[0.08] p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.125] rounded-lg p-6 max-w-lg w-full shadow-2xl flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Building2 size={14} className="text-[#4ecdc4]" />
-            <span className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">
+            <Building2 size={14} className="text-[#629fcc]" />
+            <span className="text-white/50 text-xs font-bold uppercase tracking-[0.18em]">
               Create Enterprise Account
             </span>
           </div>
-          <button onClick={onClose} className="text-white/20 hover:text-white/50 transition">
+          <button onClick={onClose} className="text-white/80 hover:text-white/50 transition">
             <X size={16} />
           </button>
         </div>
@@ -90,7 +89,7 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
             ] as const
           ).map(({ label, value, setter, placeholder, type }) => (
             <div key={label}>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">{label}</p>
               <input
                 type={type}
                 value={value}
@@ -102,30 +101,30 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
           ))}
         </div>
 
-        <p className="text-white/20 text-[11px]">
+        <p className="text-white/50 text-[11px]">
           Plan details can be added after creation by clicking the enterprise row.
         </p>
 
-        {err && <p className="text-[#e8629a] text-xs">{err}</p>}
+        {err && <p className="text-[#c975b9] text-xs">{err}</p>}
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={() => setPassword(generatePassword())}
-            className="text-[10px] uppercase tracking-[0.18em] text-white/20 hover:text-white/40 transition px-3 py-2 border border-white/[0.06] hover:border-white/10 flex-shrink-0"
+            className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#91bee3] hover:text-[#91bee3]/70 transition px-3 py-2 rounded-lg border border-[#91bee3]/20 bg-[#91bee3]/10 hover:bg-[#91bee3]/15 flex-shrink-0"
           >
             Regenerate
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-white/[0.06] text-white/25 text-xs uppercase tracking-[0.18em] hover:border-white/10 transition"
+            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/80 text-xs font-bold uppercase tracking-[0.18em] hover:border-white/[0.14] hover:text-white/50 transition"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!name || !email || !password || submitting}
-            className="flex-1 py-2.5 bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-xs uppercase tracking-[0.18em] hover:bg-[#4ecdc4]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 rounded-lg bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {submitting ? "Creating…" : "Create"}
           </button>
