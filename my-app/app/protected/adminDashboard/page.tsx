@@ -10,6 +10,7 @@ import {
   Plus,
   X,
   ChevronDown,
+  Trash2,
   Package,
   DollarSign,
   Hash,
@@ -321,6 +322,57 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
   );
 }
 
+// ─── CREATE INVOICE (client + items) ─────────────────────────────────────────
+
+type InvoiceLine = {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  quantity: string;
+};
+
+type InvoiceFormState = {
+  clientName: string;
+  email: string;
+  address: string;
+  phone: string;
+  notes: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  terms: string;
+  lines: InvoiceLine[];
+};
+
+function newInvoiceLine(): InvoiceLine {
+  const id =
+    typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID
+      ? globalThis.crypto.randomUUID()
+      : `line-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return { id, name: "", description: "", price: "", quantity: "1" };
+}
+
+function emptyInvoiceForm(): InvoiceFormState {
+  return {
+    clientName: "",
+    email: "",
+    address: "",
+    phone: "",
+    notes: "",
+    invoiceNumber: "",
+    invoiceDate: "",
+    dueDate: "",
+    terms: "Paid by the Due Date",
+    lines: [newInvoiceLine()],
+  };
+}
+
+const invFieldClass =
+  "w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#c975b9]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/25 transition";
+
+const invLabelClass = "block text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5";
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function AdminHomepage() {
@@ -342,6 +394,12 @@ export default function AdminHomepage() {
   const [addOrderOpen,         setAddOrderOpen]         = useState(false);
   const [invoiceBusy,          setInvoiceBusy]          = useState(false);
   const [invoiceErr,           setInvoiceErr]           = useState<string | null>(null);
+  const [invoiceMenuOpen,      setInvoiceMenuOpen]      = useState(false);
+  const [invoiceForm,          setInvoiceForm]          = useState<InvoiceFormState>(() =>
+    emptyInvoiceForm(),
+  );
+
+  const invoiceRootRef = useRef<HTMLDivElement>(null);
 
   const enterprises = dbUsers.filter((u) => u.role === 3);
   const customers   = dbUsers.filter((u) => u.role === 2);
@@ -385,6 +443,17 @@ export default function AdminHomepage() {
     }
     fetchAll();
   }, []);
+
+  useEffect(() => {
+    if (!invoiceMenuOpen) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (!invoiceRootRef.current?.contains(e.target as Node)) {
+        setInvoiceMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [invoiceMenuOpen]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function getPlanForUser(userUuid: string): DBPlan | undefined {
@@ -446,29 +515,112 @@ export default function AdminHomepage() {
     if (!plansRes.error) setDbPlans(plansRes.data ?? []);
   }
 
-  /** POSTs placeholder FormData to match `app/api/admin/create-invoice` until a real form exists. */
-  async function handlePlaceholderInvoice() {
+  function toggleInvoiceMenu() {
+    setInvoiceMenuOpen((open) => {
+      const next = !open;
+      if (next) setInvoiceForm(emptyInvoiceForm());
+      return next;
+    });
+  }
+
+  function updateInvoiceLine(id: string, patch: Partial<Omit<InvoiceLine, "id">>) {
+    setInvoiceForm((prev) => ({
+      ...prev,
+      lines: prev.lines.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+    }));
+  }
+
+  function addInvoiceLine() {
+    setInvoiceForm((prev) => ({ ...prev, lines: [...prev.lines, newInvoiceLine()] }));
+  }
+
+  function removeInvoiceLine(id: string) {
+    setInvoiceForm((prev) => ({
+      ...prev,
+      lines: prev.lines.length <= 1 ? prev.lines : prev.lines.filter((l) => l.id !== id),
+    }));
+  }
+
+  async function handleInvoiceSubmit() {
     setInvoiceErr(null);
+    const name = invoiceForm.clientName.trim();
+    const email = invoiceForm.email.trim();
+    const phone = invoiceForm.phone.trim();
+    const address = invoiceForm.address.trim();
+
+    if (!name) {
+      setInvoiceErr("Client name is required.");
+      return;
+    }
+    if (!email) {
+      setInvoiceErr("Email is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setInvoiceErr("Enter a valid email address.");
+      return;
+    }
+    if (!phone) {
+      setInvoiceErr("Phone is required.");
+      return;
+    }
+    if (!address) {
+      setInvoiceErr("Address is required.");
+      return;
+    }
+
+    if (invoiceForm.lines.length === 0) {
+      setInvoiceErr("Add at least one item.");
+      return;
+    }
+
+    const itemsPayload: { name: string; description: string; price: number; quantity: number }[] = [];
+    for (let i = 0; i < invoiceForm.lines.length; i++) {
+      const l = invoiceForm.lines[i];
+      const lineName = l.name.trim();
+      const price = Number(l.price);
+      const quantity = Number(l.quantity);
+      if (!lineName) {
+        setInvoiceErr(`Item ${i + 1}: name is required.`);
+        return;
+      }
+      if (!Number.isFinite(price) || price < 0) {
+        setInvoiceErr(`Item ${i + 1}: enter a valid price.`);
+        return;
+      }
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        setInvoiceErr(`Item ${i + 1}: quantity must be a whole number ≥ 1.`);
+        return;
+      }
+      itemsPayload.push({
+        name: lineName,
+        description: l.description.trim(),
+        price,
+        quantity,
+      });
+    }
+
     setInvoiceBusy(true);
     try {
       const fd = new FormData();
-      fd.append("name", "Placeholder Client");
-      fd.append("email", "billing@example.com");
-      fd.append("address", "123 Demo Street, Sample City, ST 00000");
-      fd.append("phone", "555-0100");
-      fd.append("terms", "Net 30");
-      fd.append("notes", "Placeholder invoice generated from the admin dashboard.");
-      fd.append(
-        "items",
-        JSON.stringify([
-          {
-            name: "FBX robotics program (sample)",
-            description: "Placeholder line item for PDF generation.",
-            price: 250,
-            quantity: 1,
-          },
-        ]),
-      );
+      fd.append("name", name);
+      fd.append("email", email);
+      fd.append("address", address);
+      fd.append("phone", phone);
+      if (invoiceForm.notes.trim()) fd.append("notes", invoiceForm.notes.trim());
+      if (invoiceForm.invoiceNumber.trim()) {
+        fd.append("invoiceNumber", invoiceForm.invoiceNumber.trim());
+      }
+      if (invoiceForm.invoiceDate.trim()) {
+        fd.append("invoiceDate", invoiceForm.invoiceDate.trim());
+      }
+      if (invoiceForm.dueDate.trim()) {
+        fd.append("dueDate", invoiceForm.dueDate.trim());
+      }
+      if (invoiceForm.terms.trim()) {
+        fd.append("terms", invoiceForm.terms.trim());
+      }
+      fd.append("items", JSON.stringify(itemsPayload));
 
       const res = await fetch("/api/admin/create-invoice", {
         method: "POST",
@@ -499,6 +651,7 @@ export default function AdminHomepage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(href);
+      setInvoiceMenuOpen(false);
     } catch (e) {
       setInvoiceErr(e instanceof Error ? e.message : "Could not create invoice.");
     } finally {
@@ -595,22 +748,268 @@ export default function AdminHomepage() {
           <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")}   accent="pink"  />
           <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}    accent="slate" />
         </div>
-        <button
-          type="button"
-          onClick={handlePlaceholderInvoice}
-          disabled={invoiceBusy || loading}
-          title="Generate a sample PDF invoice (placeholder data)"
-          className="flex flex-col items-center justify-center gap-1.5 shrink-0 self-stretch rounded-lg border border-[#c975b9]/25 bg-[#c975b9]/10 px-4 py-3 text-[#c975b9] hover:bg-[#c975b9]/15 transition disabled:opacity-40 disabled:cursor-not-allowed sm:min-w-[5.5rem]"
-        >
-          <Plus size={20} strokeWidth={2.25} />
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] leading-none text-center">
-            Create invoice
-          </span>
-        </button>
+        <div className="relative shrink-0 self-stretch sm:min-w-[5.5rem]" ref={invoiceRootRef}>
+          <button
+            type="button"
+            onClick={toggleInvoiceMenu}
+            disabled={loading}
+            aria-expanded={invoiceMenuOpen}
+            aria-haspopup="dialog"
+            title="Create invoice"
+            className="flex h-full min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-lg border border-[#c975b9]/25 bg-[#c975b9]/10 px-3 py-3 text-[#c975b9] hover:bg-[#c975b9]/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Plus size={20} strokeWidth={2.25} />
+            <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.2em] leading-none">
+              Invoice
+              <ChevronDown
+                size={11}
+                className={`opacity-80 transition-transform ${invoiceMenuOpen ? "rotate-180" : ""}`}
+              />
+            </span>
+          </button>
+
+          {invoiceMenuOpen && (
+            <div
+              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(100vw-1.5rem,26rem)] max-h-[min(85vh,36rem)] overflow-y-auto rounded-xl border border-white/[0.12] bg-[#0a0820] shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
+              role="dialog"
+              aria-label="Create invoice"
+            >
+              <div className="sticky top-0 z-[1] flex items-center justify-between border-b border-white/[0.08] bg-[#0a0820]/95 px-4 py-3 backdrop-blur-sm">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c975b9]">
+                  New invoice
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceMenuOpen(false)}
+                  className="text-white/50 hover:text-white/80 transition"
+                  aria-label="Close"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-5 p-4">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Client</p>
+                  <div>
+                    <label className={invLabelClass}>Name *</label>
+                    <input
+                      value={invoiceForm.clientName}
+                      onChange={(e) =>
+                        setInvoiceForm((p) => ({ ...p, clientName: e.target.value }))
+                      }
+                      className={invFieldClass}
+                      placeholder="Client or company name"
+                    />
+                  </div>
+                  <div>
+                    <label className={invLabelClass}>Email *</label>
+                    <input
+                      type="email"
+                      value={invoiceForm.email}
+                      onChange={(e) => setInvoiceForm((p) => ({ ...p, email: e.target.value }))}
+                      className={invFieldClass}
+                      placeholder="billing@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className={invLabelClass}>Phone *</label>
+                    <input
+                      value={invoiceForm.phone}
+                      onChange={(e) => setInvoiceForm((p) => ({ ...p, phone: e.target.value }))}
+                      className={invFieldClass}
+                      placeholder="555-0100"
+                    />
+                  </div>
+                  <div>
+                    <label className={invLabelClass}>Address *</label>
+                    <textarea
+                      value={invoiceForm.address}
+                      onChange={(e) => setInvoiceForm((p) => ({ ...p, address: e.target.value }))}
+                      className={`${invFieldClass} min-h-[4.5rem] resize-y`}
+                      placeholder="Street, city, region, postal code"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                    Invoice details
+                  </p>
+                  <div>
+                    <label className={invLabelClass}>Invoice #</label>
+                    <input
+                      value={invoiceForm.invoiceNumber}
+                      onChange={(e) =>
+                        setInvoiceForm((p) => ({ ...p, invoiceNumber: e.target.value }))
+                      }
+                      className={invFieldClass}
+                      placeholder="Leave blank to auto-generate"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className={invLabelClass}>Invoice date</label>
+                      <input
+                        type="date"
+                        value={invoiceForm.invoiceDate}
+                        onChange={(e) =>
+                          setInvoiceForm((p) => ({ ...p, invoiceDate: e.target.value }))
+                        }
+                        className={invFieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={invLabelClass}>Due date</label>
+                      <input
+                        type="date"
+                        value={invoiceForm.dueDate}
+                        onChange={(e) =>
+                          setInvoiceForm((p) => ({ ...p, dueDate: e.target.value }))
+                        }
+                        className={invFieldClass}
+                      />
+                      <p className="mt-1 text-[10px] text-white/30 leading-snug">
+                        If empty, PDF uses one month from today.
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={invLabelClass}>Terms</label>
+                    <input
+                      value={invoiceForm.terms}
+                      onChange={(e) => setInvoiceForm((p) => ({ ...p, terms: e.target.value }))}
+                      className={invFieldClass}
+                      placeholder="Paid by the Due Date"
+                    />
+                  </div>
+                  <div>
+                    <label className={invLabelClass}>Notes / description</label>
+                    <textarea
+                      value={invoiceForm.notes}
+                      onChange={(e) => setInvoiceForm((p) => ({ ...p, notes: e.target.value }))}
+                      className={`${invFieldClass} min-h-[4rem] resize-y`}
+                      placeholder="Shown on the invoice PDF"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                      Items
+                    </p>
+                    <button
+                      type="button"
+                      onClick={addInvoiceLine}
+                      className="flex items-center gap-1 rounded-md border border-[#c975b9]/25 bg-[#c975b9]/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#c975b9] hover:bg-[#c975b9]/15 transition"
+                    >
+                      <Plus size={11} />
+                      Add item
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {invoiceForm.lines.map((line, idx) => (
+                      <div
+                        key={line.id}
+                        className="space-y-2 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                            Item {idx + 1}
+                          </span>
+                          {invoiceForm.lines.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeInvoiceLine(line.id)}
+                              className="text-white/25 hover:text-[#c975b9] transition"
+                              title="Remove item"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                        <div>
+                          <label className={invLabelClass}>Name *</label>
+                          <input
+                            value={line.name}
+                            onChange={(e) => updateInvoiceLine(line.id, { name: e.target.value })}
+                            className={invFieldClass}
+                            placeholder="Service or product"
+                          />
+                        </div>
+                        <div>
+                          <label className={invLabelClass}>Description</label>
+                          <input
+                            value={line.description}
+                            onChange={(e) =>
+                              updateInvoiceLine(line.id, { description: e.target.value })
+                            }
+                            className={invFieldClass}
+                            placeholder="Details"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className={invLabelClass}>Price *</label>
+                            <input
+                              inputMode="decimal"
+                              value={line.price}
+                              onChange={(e) =>
+                                updateInvoiceLine(line.id, { price: e.target.value })
+                              }
+                              className={invFieldClass}
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <div>
+                            <label className={invLabelClass}>Qty *</label>
+                            <input
+                              inputMode="numeric"
+                              value={line.quantity}
+                              onChange={(e) =>
+                                updateInvoiceLine(line.id, { quantity: e.target.value })
+                              }
+                              className={invFieldClass}
+                              placeholder="1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {invoiceErr && (
+                  <p className="text-[#c975b9] text-xs tracking-wide">{invoiceErr}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
+                  <button
+                    type="button"
+                    onClick={handleInvoiceSubmit}
+                    disabled={invoiceBusy}
+                    className="flex items-center gap-2 rounded-lg border border-[#c975b9]/30 bg-[#c975b9]/15 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c975b9] hover:bg-[#c975b9]/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={12} />
+                    {invoiceBusy ? "Generating…" : "Generate PDF"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceMenuOpen(false)}
+                    disabled={invoiceBusy}
+                    className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40 hover:text-white/60 transition disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      {invoiceErr && (
-        <p className="text-[#c975b9] text-xs tracking-wide -mt-2">{invoiceErr}</p>
-      )}
 
       {/* Enterprise Accounts */}
       <SectionCard title="Enterprise Accounts" icon={Building2} count={enterprises.length} accent="teal">

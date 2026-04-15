@@ -30,6 +30,61 @@ function formatDefaultInvoiceDate(): string {
   });
 }
 
+function formatDueDateOneMonthAhead(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1);
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+const DEFAULT_INVOICE_TERMS = "Paid by the Due Date";
+
+const DEFAULT_TO_NAME = "FBX Technologies";
+const DEFAULT_TO_EMAIL = "your@email.com";
+const DEFAULT_TO_ADDRESS = "Your address";
+const DEFAULT_TO_PHONE = "(123) 456 7890";
+const DEFAULT_TAX_RATE = 0.07;
+
+function envOrDefault(key: string, fallback: string): string {
+  const v = process.env[key];
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : fallback;
+}
+
+/**
+ * Reads `INVOICE_TAX_RATE`, then `TAX_RATE`, then `TAX`.
+ * Accepts a decimal rate (0.07 = 7%) or a whole number percent (7 → 0.07).
+ * Optional trailing `%` is stripped.
+ */
+function taxRateFromEnv(): number {
+  const raw =
+    process.env.INVOICE_TAX_RATE ??
+    process.env.TAX_RATE ??
+    process.env.TAX;
+  if (raw === undefined || String(raw).trim() === "") return DEFAULT_TAX_RATE;
+  const cleaned = String(raw).trim().replace(/%$/, "");
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_TAX_RATE;
+  if (n > 1) return Math.min(n / 100, 1);
+  return Math.min(n, 1);
+}
+
+function formatTaxPercentForLabel(rate: number): string {
+  const p = Math.round(rate * 10000) / 100;
+  if (Math.abs(p - Math.round(p)) < 1e-6) return String(Math.round(p));
+  return p.toFixed(2).replace(/\.?0+$/, "");
+}
+
+/** Prefix with `P: ` unless the value already looks like a phone label line. */
+function billingPhoneLineFromEnv(raw: string): string {
+  const t = raw.trim();
+  if (!t) return `P: ${DEFAULT_TO_PHONE}`;
+  if (/^P\s*:/i.test(t)) return t;
+  return `P: ${t}`;
+}
+
 function defaultInvoiceNumber(): string {
   return `INV-${Date.now().toString(36).toUpperCase()}`;
 }
@@ -138,8 +193,10 @@ export async function POST(req: NextRequest) {
     const email = getFormString(formData, "email", "emailAddress", "email_address");
     const address = getFormString(formData, "address");
     const phone = getFormString(formData, "phone", "phoneNumber", "phone_number");
-    const dueDate = getFormString(formData, "dueDate", "due_date");
-    const terms = getFormString(formData, "terms");
+    const dueDateRaw = getFormString(formData, "dueDate", "due_date");
+    const termsRaw = getFormString(formData, "terms");
+    const dueDate = dueDateRaw || formatDueDateOneMonthAhead();
+    const terms = termsRaw || DEFAULT_INVOICE_TERMS;
     const notes = getFormString(formData, "notes");
     const invoiceNumber = getFormString(
       formData,
@@ -157,13 +214,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!email) {
+      return NextResponse.json(
+        { error: "Missing required field: email" },
+        { status: 400 },
+      );
+    }
+    if (!address) {
+      return NextResponse.json(
+        { error: "Missing required field: address" },
+        { status: 400 },
+      );
+    }
+    if (!phone) {
+      return NextResponse.json(
+        { error: "Missing required field: phone" },
+        { status: 400 },
+      );
+    }
+
     const lineItems = parseLineItemsFromForm(formData);
     if (!lineItems) {
       return NextResponse.json(
         {
           error:
-            "Invalid or missing line items. Use a JSON array in field \"items\", or indexed fields item_0_name, item_0_details, item_0_price, item_0_quantity (and items[i][*] variants).",
+            "Invalid or missing items. Use a JSON array in field \"items\", or indexed fields item_0_name, item_0_details, item_0_price, item_0_quantity (and items[i][*] variants).",
         },
+        { status: 400 },
+      );
+    }
+    if (lineItems.length === 0) {
+      return NextResponse.json(
+        { error: "At least one item is required." },
         { status: 400 },
       );
     }
@@ -178,8 +260,8 @@ export async function POST(req: NextRequest) {
     const metaRows: [string, string][] = [
       ["Number", invoiceNumber],
       ["Date", invoiceDate],
-      ["Terms", terms || "—"],
-      ["Due", dueDate || "—"],
+      ["Terms", terms],
+      ["Due", dueDate],
     ];
 
     const notesBlock =
@@ -195,6 +277,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const billingName = envOrDefault("TO_NAME", DEFAULT_TO_NAME);
+    const billingEmail = envOrDefault("TO_EMAIL", DEFAULT_TO_EMAIL);
+    const billingAddress = envOrDefault("TO_ADDRESS", DEFAULT_TO_ADDRESS);
+    const billingPhoneLine = billingPhoneLineFromEnv(
+      envOrDefault("TO_PHONE", DEFAULT_TO_PHONE),
+    );
+    const taxRate = taxRateFromEnv();
+
     // PDF GENERATION — stream into memory; no temp file on disk.
     const colors = {
       text: "#040316",
@@ -204,10 +294,9 @@ export async function POST(req: NextRequest) {
       accent: "#ab99ad",
     };
 
-  // Tax
-  const taxRate = 0.07;
-  // Currency formatter
-  const currency = (n: number) =>`$${(Math.round(n * 100) / 100).toFixed(2)}`;
+    // Currency formatter
+    const currency = (n: number) =>
+      `$${(Math.round(n * 100) / 100).toFixed(2)}`;
 
   const pass = new PassThrough();
   const chunks: Buffer[] = [];
@@ -230,6 +319,9 @@ export async function POST(req: NextRequest) {
   const left = 45;
   const right = pageWidth - 45;
   const contentWidth = right - left;
+  /** Inset for table / totals / balance amounts from the page edge (inside the blue header bar). */
+  const tableRightPad = 20;
+  const innerRight = right - tableRightPad;
 
   doc.rect(0, 0, pageWidth, pageHeight).fill(colors.background);
 
@@ -248,7 +340,7 @@ export async function POST(req: NextRequest) {
     valign: 'center',
   });
 
-  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(16).text('FBX Technologies', right - 190, 126, {
+  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(16).text(billingName, right - 190, 126, {
     width: 190,
     align: 'right',
     lineBreak: false,
@@ -265,10 +357,14 @@ export async function POST(req: NextRequest) {
   const colWidth = (contentWidth - colGap) / 2;
 
   doc.fillColor(colors.accent).font('Helvetica').fontSize(12).text('From', left, sectionTop);
-  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(21).text('FBX Technologies', left, sectionTop + 20);
-  doc.fillColor(colors.text).font('Helvetica').fontSize(11).text('your@email.com', left, sectionTop + 52);
-  doc.text('Your address', left, sectionTop + 69);
-  doc.text('P: (123) 456 7890', left, sectionTop + 86);
+  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(21).text(billingName, left, sectionTop + 20, {
+    lineBreak: false,
+  });
+  doc.fillColor(colors.text).font('Helvetica').fontSize(11).text(billingEmail, left, sectionTop + 52, {
+    lineBreak: false,
+  });
+  doc.text(billingAddress, left, sectionTop + 69, { lineBreak: false });
+  doc.text(billingPhoneLine, left, sectionTop + 86, { lineBreak: false });
 
   const forX = left + colWidth + colGap;
   doc.fillColor(colors.accent).font('Helvetica').fontSize(12).text('For', forX, sectionTop);
@@ -291,14 +387,35 @@ export async function POST(req: NextRequest) {
     doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(row[1], valX, y);
   });
 
-  // Items table header
+  // Items table — wide right-aligned numeric cells, inset from page right
+  const priceColW = 56;
+  const qtyColW = 50;
+  const amtColW = 78;
+  const numColGap = 22;
+  const amtX = innerRight - amtColW;
+  const qtyX = amtX - numColGap - qtyColW;
+  const priceX = qtyX - numColGap - priceColW;
+  const descMaxWidth = Math.max(120, priceX - left - 28);
+
   const tableTop = metaTop + 104;
   doc.rect(left, tableTop, contentWidth, 30).fill(colors.secondary);
   doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(10);
   doc.text('Description', left + 12, tableTop + 10);
-  doc.text('Price', right - 120, tableTop + 10, { width: 36, align: 'right' });
-  doc.text('Qty', right - 82, tableTop + 10, { width: 30, align: 'right' });
-  doc.text('Amount', right - 72, tableTop + 10, { width: 60, align: 'right' });
+  doc.text('Price', priceX, tableTop + 10, {
+    width: priceColW,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.text('Qty', qtyX, tableTop + 10, {
+    width: qtyColW,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.text('Amount', amtX, tableTop + 10, {
+    width: amtColW,
+    align: 'right',
+    lineBreak: false,
+  });
 
   // Item row
   const firstRowTop = tableTop + 36;
@@ -310,28 +427,31 @@ export async function POST(req: NextRequest) {
     const lineAmount = (it.price || 0) * (it.quantity || 0);
     subTotalAmount += lineAmount;
 
-    // Description (name + description)
-    doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(it.name || '', left + 12, runningY);
+    // Description (name + description) — keep within columns left of Price
+    doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(it.name || '', left + 12, runningY, {
+      width: descMaxWidth,
+      lineBreak: false,
+    });
     if (it.description) {
       doc.fillColor(colors.accent).font('Helvetica').fontSize(9).text(String(it.description), left + 12, runningY + 13, {
-        width: contentWidth - 240,
+        width: descMaxWidth,
         lineBreak: false,
       });
     }
 
-    // Numeric columns (Price, Qty, Amount)
-    doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(currency(it.price || 0), right - 120, runningY + 2, {
-      width: 36,
+    // Numeric columns (Price, Qty, Amount) — same layout as header
+    doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(currency(it.price || 0), priceX, runningY + 2, {
+      width: priceColW,
       align: 'right',
       lineBreak: false,
     });
-    doc.text(String(it.quantity || 0), right - 82, runningY + 2, {
-      width: 30,
+    doc.text(String(it.quantity || 0), qtyX, runningY + 2, {
+      width: qtyColW,
       align: 'right',
       lineBreak: false,
     });
-    doc.text(currency(lineAmount), right - 72, runningY + 2, {
-      width: 60,
+    doc.text(currency(lineAmount), amtX, runningY + 2, {
+      width: amtColW,
       align: 'right',
       lineBreak: false,
     });
@@ -342,33 +462,75 @@ export async function POST(req: NextRequest) {
   const afterItemsY = runningY;
   doc.lineWidth(1).strokeColor(colors.secondary).moveTo(left, afterItemsY).lineTo(right, afterItemsY).stroke();
 
-  // Totals
-  const totalsTop = afterItemsY + 20;
-  const totalsLabelX = right - 150;
-  const totalsValueX = right - 10;
+  // Totals — label column and value column separated (no horizontal overlap)
+  const totalsTop = afterItemsY + 22;
+  const totalsRowHeight = 22;
+  const totalsValueColW = 100;
+  const totalsLabelColW = 220;
+  const totalsLabelValueGap = 36;
+  const totalsValueX = innerRight - totalsValueColW;
+  const totalsLabelX = totalsValueX - totalsLabelValueGap - totalsLabelColW;
   const taxAmount = subTotalAmount * taxRate;
   const grandTotal = subTotalAmount + taxAmount;
   const totals = [
     ['Subtotal', currency(subTotalAmount)],
-    [`Tax (${(taxRate * 100).toFixed(0)}%)`, `+${currency(taxAmount)}`],
+    [`Tax (${formatTaxPercentForLabel(taxRate)}%)`, `+${currency(taxAmount)}`],
     ['Total', currency(grandTotal)],
   ];
 
   totals.forEach((row, i) => {
-    const y = totalsTop + i * 18;
-    doc.fillColor(colors.text).font('Helvetica').fontSize(10).text(row[0], totalsLabelX, y, { width: 90, align: 'right' });
-    doc.text(row[1], totalsValueX - 70, y, { width: 70, align: 'right' });
+    const y = totalsTop + i * totalsRowHeight;
+    doc.fillColor(colors.text).font('Helvetica').fontSize(10);
+    doc.text(row[0], totalsLabelX, y, {
+      width: totalsLabelColW,
+      align: 'right',
+      lineBreak: false,
+    });
+    doc.text(row[1], totalsValueX, y, {
+      width: totalsValueColW,
+      align: 'right',
+      lineBreak: false,
+    });
   });
 
-  const dueY = totalsTop + 58;
-  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(25).text('Balance Due', right - 285, dueY, {
-    width: 180,
-    align: 'right',
+  // Balance due — same two-column idea; reserve vertical space if text ever wraps
+  const dueY = totalsTop + totals.length * totalsRowHeight + 22;
+  const dueValueColW = 110;
+  const dueLabelColW = 240;
+  const dueLabelValueGap = 28;
+  const dueValueX = innerRight - dueValueColW;
+  const dueLabelX = dueValueX - dueLabelValueGap - dueLabelColW;
+  const dueGrandStr = currency(grandTotal);
+
+  doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(25);
+  const dueOptsLabel = {
+    width: dueLabelColW,
+    align: "right" as const,
     lineBreak: false,
-  });
-  doc.text(currency(grandTotal), right - 95, dueY, { width: 95, align: 'right', lineBreak: false });
+  };
+  const dueOptsValue = {
+    width: dueValueColW,
+    align: "right" as const,
+    lineBreak: false,
+  };
+  const docMeasure = doc as unknown as {
+    heightOfString?: (text: string, options: object) => number;
+  };
+  let dueBlockH = 40;
+  if (typeof docMeasure.heightOfString === "function") {
+    dueBlockH =
+      Math.max(
+        docMeasure.heightOfString("Balance Due", dueOptsLabel),
+        docMeasure.heightOfString(dueGrandStr, dueOptsValue),
+      ) + 18;
+  } else {
+    dueBlockH = Math.ceil(25 * 1.35) + 20;
+  }
 
-  const finalDividerY = dueY + 36;
+  doc.text("Balance Due", dueLabelX, dueY, dueOptsLabel);
+  doc.text(dueGrandStr, dueValueX, dueY, dueOptsValue);
+
+  const finalDividerY = dueY + dueBlockH;
   doc.lineWidth(1).strokeColor(colors.secondary).moveTo(left, finalDividerY).lineTo(right, finalDividerY).stroke();
 
   doc.fillColor('#666666').font('Helvetica').fontSize(9).text(notesBlock, left, finalDividerY + 24, {
