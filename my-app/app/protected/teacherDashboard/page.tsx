@@ -19,16 +19,8 @@ interface DBUser {
   role: number;
 }
 
-interface DBCourse {
-  id: string;
-  course_link: string;
-  course_uuid: string;
-  course_name: string;
-}
-
 interface DBStudentCourse {
   id: string;
-  course_uuid: string;
   student_email: string;
   client_uuid: string;
 }
@@ -42,7 +34,7 @@ const ACCENTS = {
 };
 type AccentKey = keyof typeof ACCENTS;
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
+// ─── UI COMPONENTS ────────────────────────────────────────────────────────────
 
 function SectionCard({ title, icon: Icon, count, accent = "violet", children }: {
   title: string; icon: LucideIcon; count?: number; accent?: AccentKey; children: React.ReactNode;
@@ -111,17 +103,14 @@ export default function TeacherPortal() {
   const supabase = createClient();
 
   const [dbUser, setDbUser]     = useState<DBUser | null>(null);
-  const [courses, setCourses]   = useState<DBCourse[]>([]);
   const [enrolled, setEnrolled] = useState<DBStudentCourse[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
 
-  // Form state
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [email, setEmail]                   = useState("");
-  const [submitting, setSubmitting]         = useState(false);
-  const [success, setSuccess]               = useState(false);
-  const [formErr, setFormErr]               = useState<string | null>(null);
+  const [email, setEmail]           = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess]       = useState(false);
+  const [formErr, setFormErr]       = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAll() {
@@ -131,17 +120,14 @@ export default function TeacherPortal() {
       if (!user) { setError("Not authenticated"); setLoading(false); return; }
 
       try {
-        const [userRes, coursesRes, enrolledRes] = await Promise.all([
+        const [userRes, enrolledRes] = await Promise.all([
           supabase.from("users").select("*").eq("user_uuid", user.id).limit(1).maybeSingle(),
-          supabase.from("courses").select("*"),
           supabase.from("student_courses").select("*").eq("client_uuid", user.id),
         ]);
         if (userRes.error)     throw new Error(`User: ${userRes.error.message}`);
-        if (coursesRes.error)  throw new Error(`Courses: ${coursesRes.error.message}`);
         if (enrolledRes.error) throw new Error(`Enrolled: ${enrolledRes.error.message}`);
 
         setDbUser(userRes.data ?? null);
-        setCourses(coursesRes.data ?? []);
         setEnrolled(enrolledRes.data ?? []);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -153,13 +139,12 @@ export default function TeacherPortal() {
   }, []);
 
   async function handleAdd() {
-    if (!selectedCourse || !email || !dbUser) return;
+    if (!email || !dbUser) return;
     setSubmitting(true);
     setFormErr(null);
     setSuccess(false);
 
     const { data, error } = await supabase.from("student_courses").insert({
-      course_uuid:   selectedCourse,
       student_email: email.trim().toLowerCase(),
       client_uuid:   dbUser.user_uuid,
     }).select().single();
@@ -176,11 +161,6 @@ export default function TeacherPortal() {
     const { error } = await supabase.from("student_courses").delete().eq("id", id);
     if (error) { console.error(error.message); return; }
     setEnrolled((prev) => prev.filter((s) => s.id !== id));
-  }
-
-  function courseLabel(uuid: string) {
-    const c = courses.find((c) => c.course_uuid === uuid);
-    return c?.course_name ?? c?.course_link ?? uuid;
   }
 
   if (error) return (
@@ -204,104 +184,86 @@ export default function TeacherPortal() {
       </div>
 
       {/* Stat card */}
-      <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
-        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
-          <div className="absolute inset-x-0 top-0 h-px bg-[#9b7fe8]/10" />
-          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Students Enrolled</p>
-          {loading
-            ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
-            : <p className="text-4xl font-light text-[#9b7fe8] tabular-nums">{String(enrolled.length).padStart(2, "0")}</p>
-          }
-        </div>
-        <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
-          <div className="absolute inset-x-0 top-0 h-px bg-[#7e8fb5]/10" />
-          <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Available Courses</p>
-          {loading
-            ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
-            : <p className="text-4xl font-light text-[#7e8fb5] tabular-nums">{String(courses.length).padStart(2, "0")}</p>
-          }
-        </div>
+      <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
+        <div className="absolute inset-x-0 top-0 h-px bg-[#9b7fe8]/10" />
+        <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Students Enrolled</p>
+        {loading
+          ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
+          : <p className="text-4xl font-light text-[#9b7fe8] tabular-nums">{String(enrolled.length).padStart(2, "0")}</p>
+        }
       </div>
 
       {/* Enroll Students */}
-      <SectionCard title="Enroll Students" icon={GraduationCap} accent="violet">
-        <div className="px-5 py-5 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Course picker */}
-            <div>
-              <FieldLabel>Course</FieldLabel>
-              {loading ? (
-                <div className="h-11 bg-white/5 animate-pulse" />
-              ) : (
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 outline-none focus:border-white/10 transition appearance-none">
-                  <option value="" disabled className="bg-[#080710]">Select a course…</option>
-                  {courses.map((c) => (
-                    <option key={c.course_uuid} value={c.course_uuid} className="bg-[#080710]">
-                      {c.course_name ?? c.course_link ?? `Course ${c.id}`}
-                    </option>
-                  ))}
-                </select>
-              )}
+<SectionCard title="Enroll Students" icon={GraduationCap} count={enrolled.length} accent="violet">
+
+  {/* Add form */}
+  <div className="px-5 py-5">
+    <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+      <div className="flex-1">
+        <FieldLabel>Student Email</FieldLabel>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          placeholder="student@university.edu"
+          className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition"
+        />
+      </div>
+      
+      <button
+        onClick={handleAdd}
+        disabled={!email || submitting || loading}
+        className="flex items-center justify-center gap-2 px-6 py-3 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+      >
+        <UserPlus size={12} />
+        {submitting ? "Adding…" : "Add Student"}
+      </button>
+    </div>
+
+    {formErr && <p className="text-[#e8629a] text-xs mt-3">{formErr}</p>}
+    
+    {success && (
+      <div className="mt-3">
+        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#9b7fe8]">
+          <CheckCircle2 size={10} /> Student added
+        </span>
+      </div>
+    )}
+  </div>
+
+  {/* Enrolled list */}
+  {(loading || enrolled.length > 0) && (
+    <>
+      <TableHeader cols={["Student", ""]} />
+      {loading
+        ? [1, 2, 3].map((i) => <LoadingRow key={i} />)
+        : enrolled.map((s) => (
+            <div key={s.id} className="px-5 py-3.5 grid sm:grid-cols-2 items-center gap-3 border-b border-white/[0.04] last:border-0">
+              <div className="flex items-center gap-3">
+                <Avatar initials={s.student_email.slice(0, 2).toUpperCase()} />
+                <span className="text-white/50 text-sm truncate">{s.student_email}</span>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleRemove(s.id)}
+                  title="Remove student"
+                  className="text-white/15 hover:text-red-400 transition"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
-            {/* Email */}
-            <div>
-              <FieldLabel>Student Email</FieldLabel>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@university.edu"
-                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition"
-              />
-            </div>
-          </div>
+          ))
+      }
+    </>
+  )}
 
-          {formErr && <p className="text-[#e8629a] text-xs">{formErr}</p>}
+  {!loading && enrolled.length === 0 && (
+    <EmptyRow message="No students enrolled yet" />
+  )}
 
-          <div className="flex items-center justify-between">
-            {success ? (
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#9b7fe8]">
-                <CheckCircle2 size={10} /> Student added
-              </span>
-            ) : <span />}
-            <button onClick={handleAdd} disabled={!selectedCourse || !email || submitting || loading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed">
-              <UserPlus size={12} />
-              {submitting ? "Adding…" : "Add Student"}
-            </button>
-          </div>
-        </div>
-
-        {/* Enrolled list */}
-        {(loading || enrolled.length > 0) && (
-          <>
-            <TableHeader cols={["Student", "Course", ""]} />
-            {loading
-              ? [1, 2, 3].map((i) => <LoadingRow key={i} />)
-              : enrolled.map((s) => (
-                  <div key={s.id} className="px-5 py-3.5 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0">
-                    <div className="flex items-center gap-3">
-                      <Avatar initials={s.student_email.slice(0, 2).toUpperCase()} />
-                      <span className="text-white/50 text-sm truncate">{s.student_email}</span>
-                    </div>
-                    <span className="hidden sm:block text-white/25 text-xs truncate">{courseLabel(s.course_uuid)}</span>
-                    <div className="flex justify-end sm:justify-start">
-                      <button onClick={() => handleRemove(s.id)} title="Remove student"
-                        className="text-white/15 hover:text-red-400 transition">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))
-            }
-          </>
-        )}
-
-        {!loading && enrolled.length === 0 && (
-          <EmptyRow message="No students enrolled yet" />
-        )}
-      </SectionCard>
+</SectionCard>
 
     </div>
   );

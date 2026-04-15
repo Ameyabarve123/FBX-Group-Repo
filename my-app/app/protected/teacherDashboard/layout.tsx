@@ -1,5 +1,5 @@
 // app/clientDashboard/layout.tsx
-import ClientNavbar from "@/components/dashboardComponents/clientNavbar";
+import TeacherNavbar from "@/components/dashboardComponents/teacherNavbar";
 
 export default function ClientDashboardLayout({
   children,
@@ -8,7 +8,7 @@ export default function ClientDashboardLayout({
 }) {
   return (
     <div className="min-h-screen bg-[#080710]">
-      <ClientNavbar activePage="dashboard" />
+      <TeacherNavbar activePage="dashboard" />
       <main>
         {children}
       </main>
