@@ -340,6 +340,8 @@ export default function AdminHomepage() {
   const [createEnterpriseOpen, setCreateEnterpriseOpen] = useState(false);
   const [newCredentials,       setNewCredentials]       = useState<{ name: string; email: string; password: string } | null>(null);
   const [addOrderOpen,         setAddOrderOpen]         = useState(false);
+  const [invoiceBusy,          setInvoiceBusy]          = useState(false);
+  const [invoiceErr,           setInvoiceErr]           = useState<string | null>(null);
 
   const enterprises = dbUsers.filter((u) => u.role === 3);
   const customers   = dbUsers.filter((u) => u.role === 2);
@@ -444,6 +446,66 @@ export default function AdminHomepage() {
     if (!plansRes.error) setDbPlans(plansRes.data ?? []);
   }
 
+  /** POSTs placeholder FormData to match `app/api/admin/create-invoice` until a real form exists. */
+  async function handlePlaceholderInvoice() {
+    setInvoiceErr(null);
+    setInvoiceBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("name", "Placeholder Client");
+      fd.append("email", "billing@example.com");
+      fd.append("address", "123 Demo Street, Sample City, ST 00000");
+      fd.append("phone", "555-0100");
+      fd.append("terms", "Net 30");
+      fd.append("notes", "Placeholder invoice generated from the admin dashboard.");
+      fd.append(
+        "items",
+        JSON.stringify([
+          {
+            name: "FBX robotics program (sample)",
+            description: "Placeholder line item for PDF generation.",
+            price: 250,
+            quantity: 1,
+          },
+        ]),
+      );
+
+      const res = await fetch("/api/admin/create-invoice", {
+        method: "POST",
+        body: fd,
+      });
+
+      if (!res.ok) {
+        let msg = `Request failed (${res.status})`;
+        const ct = res.headers.get("content-type");
+        if (ct?.includes("application/json")) {
+          try {
+            const j = (await res.json()) as { error?: string };
+            if (typeof j.error === "string" && j.error) msg = j.error;
+          } catch {
+            /* ignore */
+          }
+        }
+        throw new Error(msg);
+      }
+
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = "invoice.pdf";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    } catch (e) {
+      setInvoiceErr(e instanceof Error ? e.message : "Could not create invoice.");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
+
   // ── Error state ────────────────────────────────────────────────────────────
   if (error) {
     return (
@@ -526,12 +588,29 @@ export default function AdminHomepage() {
         <h1 className="text-white/75 text-2xl font-bold tracking-wide">Admin Dashboard</h1>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Enterprise"   value={String(enterprises.length).padStart(2, "0")} accent="teal"  />
-        <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")}   accent="pink"  />
-        <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}    accent="slate" />
+      {/* Stat cards + create invoice */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="grid grid-cols-3 gap-3 flex-1 min-w-0">
+          <StatCard label="Enterprise"   value={String(enterprises.length).padStart(2, "0")} accent="teal"  />
+          <StatCard label="Open Tickets" value={String(dbTickets.length).padStart(2, "0")}   accent="pink"  />
+          <StatCard label="Orders"       value={String(dbOrders.length).padStart(2, "0")}    accent="slate" />
+        </div>
+        <button
+          type="button"
+          onClick={handlePlaceholderInvoice}
+          disabled={invoiceBusy || loading}
+          title="Generate a sample PDF invoice (placeholder data)"
+          className="flex flex-col items-center justify-center gap-1.5 shrink-0 self-stretch rounded-lg border border-[#c975b9]/25 bg-[#c975b9]/10 px-4 py-3 text-[#c975b9] hover:bg-[#c975b9]/15 transition disabled:opacity-40 disabled:cursor-not-allowed sm:min-w-[5.5rem]"
+        >
+          <Plus size={20} strokeWidth={2.25} />
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em] leading-none text-center">
+            Create invoice
+          </span>
+        </button>
       </div>
+      {invoiceErr && (
+        <p className="text-[#c975b9] text-xs tracking-wide -mt-2">{invoiceErr}</p>
+      )}
 
       {/* Enterprise Accounts */}
       <SectionCard title="Enterprise Accounts" icon={Building2} count={enterprises.length} accent="teal">

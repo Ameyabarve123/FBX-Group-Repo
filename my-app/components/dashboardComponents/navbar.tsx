@@ -75,14 +75,25 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
+/** Labels match account type; keep in sync with `lib/dashboard-routing.ts`. */
+function dashboardTitle(isAdmin: boolean, role: number | null | undefined): string {
+  if (isAdmin) return "Admin Dashboard";
+  const r = role === null || role === undefined ? NaN : Number(role);
+  if (r === 0) return "Teacher Dashboard";
+  if (r === 1) return "Student Dashboard";
+  return "Client Dashboard";
+}
+
 export default function Navbar({
   activePage = "dashboard",
   isAdmin,
   clientName,
+  role,
 }: {
   activePage?: string;
   isAdmin: boolean;
   clientName?: string;
+  role?: number | null;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
@@ -106,6 +117,8 @@ export default function Navbar({
   const initials = clientName
     ? clientName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "A";
+
+  const dashboardLabel = dashboardTitle(isAdmin, role);
 
   return (
     <>
@@ -132,7 +145,7 @@ export default function Navbar({
               FBX Technologies
             </p>
             <span className="text-white/60 text-base font-light tracking-wide">
-              {isAdmin ? "Admin Panel" : "Client Portal"}
+              {dashboardLabel}
             </span>
           </div>
           <button
@@ -177,7 +190,7 @@ export default function Navbar({
               {isAdmin ? "Admin" : (clientName ?? "Client")}
             </span>
             <span className="text-xs text-white/20 truncate tracking-wide">
-              {isAdmin ? "admin@url.com" : "Client Portal"}
+              {dashboardLabel}
             </span>
           </div>
           <button
@@ -216,7 +229,7 @@ export default function Navbar({
             FBX Technologies
           </p>
           <h1 className="text-white/60 text-base font-light tracking-wide">
-            {isAdmin ? "Admin Dashboard" : "Client Portal"}
+            {dashboardLabel}
           </h1>
         </div>
 
