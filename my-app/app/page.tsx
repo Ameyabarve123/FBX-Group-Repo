@@ -1,4 +1,4 @@
-import Navbar from '../components/navbar.tsx';
+import Navbar from '../components/navbar';
 
 const gradientButtonStyle: React.CSSProperties = {
   border: '2px solid transparent',
