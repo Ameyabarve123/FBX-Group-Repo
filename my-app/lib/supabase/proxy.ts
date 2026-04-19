@@ -1,20 +1,40 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getDashboardPathForUser, type DashboardUser } from "@/lib/dashboard-routing";
 import { hasEnvVars } from "../utils";
+
+function isDashboardPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/protected/adminDashboard") ||
+    pathname.startsWith("/protected/teacherDashboard") ||
+    pathname.startsWith("/protected/studentDashboard") ||
+    pathname.startsWith("/protected/clientDashboard")
+  );
+}
+
+function redirectPreservingSession(
+  request: NextRequest,
+  pathname: string,
+  supabaseResponse: NextResponse,
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  const redirectResponse = NextResponse.redirect(url);
+  for (const c of supabaseResponse.cookies.getAll()) {
+    redirectResponse.cookies.set(c.name, c.value);
+  }
+  return redirectResponse;
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  // If the env vars are not set, skip proxy check. You can remove this
-  // once you setup the project.
   if (!hasEnvVars) {
     return supabaseResponse;
   }
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -38,46 +58,69 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims as { sub?: string } | undefined;
   const user = data?.claims;
+  const pathname = request.nextUrl.pathname;
 
-  if (request.nextUrl.pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = user ? "/protected" : "/auth/login";
-    return NextResponse.redirect(url);
+  const isProtected = pathname.startsWith("/protected");
+
+  if (isProtected && !user) {
+    return redirectPreservingSession(request, "/auth/login", supabaseResponse);
   }
 
-  // TODO: Uncomment if statement after auth is implemented. turned off for easy testing
-  // if (
-  //   request.nextUrl.pathname !== "/" &&
-  //   !user &&
-  //   !request.nextUrl.pathname.startsWith("/login") &&
-  //   !request.nextUrl.pathname.startsWith("/auth")
-  // ) {
-  //   // no user, potentially respond by redirecting the user to the login page
-  //   const url = request.nextUrl.clone();
-  //   url.pathname = "/auth/login";
-  //   return NextResponse.redirect(url);
-  // }
+  if (pathname === "/") {
+    const url = request.nextUrl.clone();
+    if (!user) {
+      url.pathname = "/auth/login";
+    } else {
+      const { data: dbUser } = await supabase
+        .from("users")
+        .select("is_admin, role")
+        .eq("user_uuid", claims?.sub ?? "")
+        .maybeSingle<DashboardUser>();
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+      url.pathname = getDashboardPathForUser(dbUser ?? { is_admin: 0 });
+    }
+    const redirectResponse = NextResponse.redirect(url);
+    for (const c of supabaseResponse.cookies.getAll()) {
+      redirectResponse.cookies.set(c.name, c.value);
+    }
+    return redirectResponse;
+  }
+
+  if (user && claims?.sub && isProtected) {
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("is_admin, role")
+      .eq("user_uuid", claims.sub)
+      .maybeSingle<DashboardUser>();
+
+    const dashboardPath = getDashboardPathForUser(dbUser ?? { is_admin: 0 });
+
+    if (pathname.startsWith("/protected/profile")) {
+      return supabaseResponse;
+    }
+
+    if (pathname === "/protected" || pathname === "/protected/") {
+      return redirectPreservingSession(request, dashboardPath, supabaseResponse);
+    }
+
+    if (isDashboardPath(pathname) && !pathname.startsWith(dashboardPath)) {
+      return redirectPreservingSession(request, dashboardPath, supabaseResponse);
+    }
+  }
+
+  if (user && (pathname === "/auth/login" || pathname === "/auth/sign-up")) {
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("is_admin, role")
+      .eq("user_uuid", claims?.sub ?? "")
+      .maybeSingle<DashboardUser>();
+
+    const dashboardPath = getDashboardPathForUser(dbUser ?? { is_admin: 0 });
+    return redirectPreservingSession(request, dashboardPath, supabaseResponse);
+  }
 
   return supabaseResponse;
 }

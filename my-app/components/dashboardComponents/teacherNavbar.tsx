@@ -1,21 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   LayoutDashboard,
-  Users,
-  ShoppingCart,
-  TicketCheck,
   Package,
+  TicketCheck,
   Star,
   Menu,
   X,
-  LogOut,
-  User,
   LucideIcon,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface NavItemProps {
@@ -23,22 +17,28 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
-  href?: string;
 }
 
 // ─── Nav Item ─────────────────────────────────────────────────────────────────
-function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemProps) {
-  const content = (
-    <>
+function NavItem({ icon: Icon, label, active = false, onClick }: NavItemProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150 border-b border-white/[0.04] group relative ${
+        active
+          ? "bg-white/[0.03] text-white/75"
+          : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]"
+      }`}
+    >
       {active && (
-        <span className="absolute left-0 top-0 bottom-0 w-px bg-[#e8629a]" />
+        <span className="absolute left-0 top-0 bottom-0 w-px bg-[#9b7fe8]" />
       )}
 
       <Icon
         size={15}
         className={
           active
-            ? "text-[#e8629a]"
+            ? "text-[#9b7fe8]"
             : "text-white/20 group-hover:text-white/40 transition-colors"
         }
       />
@@ -48,52 +48,19 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
       </span>
 
       {active && (
-        <span className="ml-auto text-[10px] text-[#e8629a]">●</span>
+        <span className="ml-auto text-[10px] text-[#9b7fe8]">●</span>
       )}
-    </>
-  );
-
-  const className = `w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150 border-b border-white/[0.04] group relative ${
-    active
-      ? "bg-white/[0.03] text-white/75"
-      : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]"
-  }`;
-
-  if (href) {
-    return (
-      <Link href={href} onClick={onClick} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <button onClick={onClick} className={className}>
-      {content}
     </button>
   );
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-/** Labels match account type; keep in sync with `lib/dashboard-routing.ts`. */
-function dashboardTitle(isAdmin: boolean, role: number | null | undefined): string {
-  if (isAdmin) return "Admin Dashboard";
-  const r = role === null || role === undefined ? NaN : Number(role);
-  if (r === 0) return "Teacher Dashboard";
-  if (r === 1) return "Student Dashboard";
-  return "Client Dashboard";
-}
-
-export default function Navbar({
+// ─── Client Navbar ────────────────────────────────────────────────────────────
+export default function ClientNavbar({
   activePage = "dashboard",
-  isAdmin,
   clientName,
-  role,
 }: {
   activePage?: string;
-  isAdmin: boolean;
   clientName?: string;
-  role?: number | null;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
@@ -108,20 +75,13 @@ export default function Navbar({
   const closeSidebar = () => setSidebarOpen(false);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }
-
   const initials = clientName
     ? clientName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
-    : "A";
-
-  const dashboardLabel = dashboardTitle(isAdmin, role);
+    : "?";
 
   return (
     <>
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/70 z-20 lg:hidden"
@@ -145,7 +105,7 @@ export default function Navbar({
               FBX Technologies
             </p>
             <span className="text-white/60 text-base font-light tracking-wide">
-              {dashboardLabel}
+              Teacher Portal
             </span>
           </div>
           <button
@@ -165,41 +125,27 @@ export default function Navbar({
 
         {/* Nav links */}
         <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
-
-          {isAdmin ? (
-            <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
-            </>
-          ) : (
-            <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
-            </>
-          )}
-        
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            active={activePage === "dashboard"}
+            onClick={closeSidebar}
+          />
         </nav>
 
         {/* Bottom user */}
         <div className="border-t border-white/[0.06] px-5 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-sm bg-[#9b7fe8]/10 ring-1 ring-[#9b7fe8]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#9b7fe8] flex-shrink-0">
+          <div className="w-9 h-9 rounded-sm bg-[#e8629a]/10 ring-1 ring-[#e8629a]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#e8629a] flex-shrink-0">
             {initials}
           </div>
-          <div className="flex flex-col min-w-0 flex-1">
+          <div className="flex flex-col min-w-0">
             <span className="text-sm text-white/50 font-medium truncate">
-              {isAdmin ? "Admin" : (clientName ?? "Client")}
+              {clientName ?? "Client"}
             </span>
             <span className="text-xs text-white/20 truncate tracking-wide">
-              {dashboardLabel}
+              Teacher Portal
             </span>
           </div>
-          <button
-            onClick={handleLogout}
-            title="Log out"
-            className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-[#e8629a] transition-colors flex-shrink-0"
-          >
-            <LogOut size={15} />
-          </button>
         </div>
       </aside>
 
@@ -229,7 +175,7 @@ export default function Navbar({
             FBX Technologies
           </p>
           <h1 className="text-white/60 text-base font-light tracking-wide">
-            {dashboardLabel}
+            Teacher Portal
           </h1>
         </div>
 
