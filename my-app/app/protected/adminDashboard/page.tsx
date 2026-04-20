@@ -736,10 +736,12 @@ export default function AdminHomepage() {
       )}
 
       {/* Page header */}
-      <div className="pb-4 border-b border-white/[0.125]">
-        <p className="text-xs uppercase tracking-[0.22em] text-white/80 mb-1">FBX Technologies</p>
+      <div className="pb-4 border-b border-white/[0.125] flex items-center gap-4">
+      <img src="/fbx_logo.png" alt="Hero Image" className="max-h-[7vh] max-w-full" />
+      <div>
         <h1 className="text-white/75 text-2xl font-bold tracking-wide">Admin Dashboard</h1>
       </div>
+    </div>
 
       {/* Stat cards + create invoice */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">

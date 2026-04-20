@@ -224,16 +224,37 @@ export default function Navbar({
           )}
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 text-center">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/20 mb-0.5">
-            FBX Technologies
-          </p>
-          <h1 className="text-white/60 text-base font-light tracking-wide">
-            {dashboardLabel}
-          </h1>
+        {/* Center nav links */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex gap-4 justify-center items-center">
+          <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">About</a>
+          <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Learn</a>
+          <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Enterprise</a>
         </div>
 
-        <div className="w-8" />
+        {/* Right action buttons */}
+        <div className="flex gap-2 items-center">
+          
+            <a href="https://example.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full border-2 border-transparent bg-white text-black no-underline"
+          >
+            Contact Us
+          </a>
+          
+            <a href="https://example.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full text-white no-underline"
+            style={{
+              border: '2px solid transparent',
+              background: 'linear-gradient(#0b081c) padding-box, linear-gradient(45deg, #629fcc, #c975b9) border-box',
+              filter: 'drop-shadow(1rem 0rem 1.4rem rgba(187,60,164,0.2)) drop-shadow(-1rem 0rem 1.5rem rgba(11,113,187,0.125))',
+            }}
+          >
+            Sign In
+          </a>
+        </div>
       </header>
     </>
   );
