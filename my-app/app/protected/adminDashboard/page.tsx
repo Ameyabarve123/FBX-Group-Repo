@@ -34,6 +34,7 @@ type InvoiceFormState = {
   email: string;
   address: string;
   phone: string;
+  enterpriseUserUuid: string;
   notes: string;
   invoiceNumber: string;
   invoiceDate: string;
@@ -50,7 +51,7 @@ function newInvoiceLine(): InvoiceLine {
 
 function emptyInvoiceForm(): InvoiceFormState {
   return {
-    clientName: "", email: "", address: "", phone: "", notes: "",
+    clientName: "", email: "", address: "", phone: "", enterpriseUserUuid: "", notes: "",
     invoiceNumber: "", invoiceDate: "", dueDate: "",
     terms: "Paid by the Due Date",
     lines: [newInvoiceLine()],
@@ -182,6 +183,35 @@ export default function AdminHomepage() {
     }));
   }
 
+  function handleEnterprisePresetChange(selectedUuid: string) {
+    setInvoiceForm((prev) => {
+      if (!selectedUuid) {
+        return { ...prev, enterpriseUserUuid: "" };
+      }
+
+      const picked = enterprises.find((e) => e.user_uuid === selectedUuid);
+      if (!picked) return { ...prev, enterpriseUserUuid: selectedUuid };
+
+      const row = picked as unknown as Record<string, unknown>;
+      const pickText = (...keys: string[]) => {
+        for (const k of keys) {
+          const v = row[k];
+          if (typeof v === "string" && v.trim() !== "") return v.trim();
+        }
+        return "";
+      };
+
+      return {
+        ...prev,
+        enterpriseUserUuid: selectedUuid,
+        clientName: pickText("client_name", "name", "company_name") || prev.clientName,
+        email: pickText("email", "billing_email") || prev.email,
+        phone: pickText("phone", "phone_number", "billing_phone") || prev.phone,
+        address: pickText("address", "billing_address") || prev.address,
+      };
+    });
+  }
+
   async function handleInvoiceSubmit() {
     setInvoiceErr(null);
     const name    = invoiceForm.clientName.trim();
@@ -215,6 +245,7 @@ export default function AdminHomepage() {
       fd.append("email", email);
       fd.append("address", address);
       fd.append("phone", phone);
+      if (invoiceForm.enterpriseUserUuid.trim()) fd.append("enterpriseUserUuid", invoiceForm.enterpriseUserUuid.trim());
       if (invoiceForm.notes.trim())         fd.append("notes", invoiceForm.notes.trim());
       if (invoiceForm.invoiceNumber.trim()) fd.append("invoiceNumber", invoiceForm.invoiceNumber.trim());
       if (invoiceForm.invoiceDate.trim())   fd.append("invoiceDate", invoiceForm.invoiceDate.trim());
@@ -233,11 +264,15 @@ export default function AdminHomepage() {
       }
 
       const blob = await res.blob();
+      const logoMissing = res.headers.get("X-Enterprise-Logo-Missing") === "1";
       const href = URL.createObjectURL(blob);
       const a    = document.createElement("a");
       a.href = href; a.download = "invoice.pdf"; a.rel = "noopener";
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(href);
+      if (logoMissing) {
+        window.alert("The selected enterprise has not yet uploaded their logo.");
+      }
       setInvoiceMenuOpen(false);
     } catch (e) {
       setInvoiceErr(e instanceof Error ? e.message : "Could not create invoice.");
@@ -336,6 +371,21 @@ export default function AdminHomepage() {
                 {/* Client */}
                 <div className="space-y-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Client</p>
+                  <div>
+                    <label className={invLabelClass}>Enterprise preset</label>
+                    <select
+                      value={invoiceForm.enterpriseUserUuid}
+                      onChange={(e) => handleEnterprisePresetChange(e.target.value)}
+                      className={invFieldClass}
+                    >
+                      <option value="">None</option>
+                      {enterprises.map((e) => (
+                        <option key={e.user_uuid} value={e.user_uuid}>
+                          {e.client_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {[
                     { label: "Name *",    key: "clientName" as const, type: "text",  placeholder: "Client or company name" },
                     { label: "Email *",   key: "email"      as const, type: "email", placeholder: "billing@example.com"    },
