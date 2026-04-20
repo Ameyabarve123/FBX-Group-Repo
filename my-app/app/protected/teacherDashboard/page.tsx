@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Trash2,
   LucideIcon,
+  AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -23,6 +24,12 @@ interface DBStudentCourse {
   id: string;
   student_email: string;
   enterprise_uuid: string;
+}
+
+interface DBPlan {
+  id: string;
+  user_uuid: string;
+  curriculums_allocated: number;
 }
 
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
@@ -97,50 +104,103 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{children}</p>;
 }
 
+// ─── CAPACITY BANNER ─────────────────────────────────────────────────────────
+
+function CapacityBanner({ current, max }: { current: number; max: number }) {
+  const percentage = max > 0 ? Math.round((current / max) * 100) : 0;
+  const isFull = max > 0 && current >= max;
+  
+  if (max === 0) {
+    return (
+      <div className="bg-[#e8629a]/5 border border-[#e8629a]/20 px-5 py-3 mb-4">
+        <div className="flex items-center gap-2">
+          <AlertCircle size={12} className="text-[#e8629a]" />
+          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">No licenses allocated</p>
+        </div>
+        <p className="text-white/25 text-xs mt-1">Contact your enterprise administrator to add student capacity.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="bg-white/[0.02] border border-white/[0.06] px-5 py-3 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <GraduationCap size={12} className="text-[#9b7fe8]" />
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">Student Capacity For Enterprise</span>
+        </div>
+        <span className={`text-[10px] font-bold ${isFull ? "text-[#e8629a]" : "text-[#9b7fe8]"}`}>
+          {current} / {max} used
+        </span>
+      </div>
+      <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-[#e8629a]" : "bg-[#9b7fe8]"}`}
+          style={{ width: `${Math.min(100, percentage)}%` }}
+        />
+      </div>
+      {isFull && (
+        <p className="text-[#e8629a] text-[10px] mt-2 flex items-center gap-1">
+          <AlertCircle size={10} /> Capacity reached. Cannot add more students.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function TeacherPortal() {
   const supabase = createClient();
 
-  const [dbUser, setDbUser]                     = useState<DBUser | null>(null);
-  const [enrolled, setEnrolled]                 = useState<DBStudentCourse[]>([]);
-  const [enterpriseUuid, setEnterpriseUuid]     = useState<string | null>(null);
-  const [loading, setLoading]                   = useState(true);
-  const [error, setError]                       = useState<string | null>(null);
+  const [dbUser, setDbUser] = useState<DBUser | null>(null);
+  const [enrolled, setEnrolled] = useState<DBStudentCourse[]>([]);
+  const [enterpriseUuid, setEnterpriseUuid] = useState<string | null>(null);
+  const [enterprisePlan, setEnterprisePlan] = useState<DBPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [email, setEmail]           = useState("");
+  const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess]       = useState(false);
-  const [formErr, setFormErr]       = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [formErr, setFormErr] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       setError(null);
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setError("Not authenticated"); setLoading(false); return; }
+      if (!user) { 
+        setError("Not authenticated"); 
+        setLoading(false); 
+        return; 
+      }
 
       try {
-        // Fetch user row, enterprise link, and existing students in parallel
         const [userRes, teacherRes] = await Promise.all([
           supabase.from("users").select("*").eq("user_uuid", user.id).limit(1).maybeSingle(),
           supabase.from("enterprise_teachers").select("enterprise_uuid").eq("client_uuid", user.id).limit(1).maybeSingle(),
         ]);
-        if (userRes.error)    throw new Error(`User: ${userRes.error.message}`);
+        
+        if (userRes.error) throw new Error(`User: ${userRes.error.message}`);
         if (teacherRes.error) throw new Error(`Enterprise: ${teacherRes.error.message}`);
 
         const entUuid = teacherRes.data?.enterprise_uuid ?? null;
         setDbUser(userRes.data ?? null);
         setEnterpriseUuid(entUuid);
 
-        // Now fetch students for this enterprise
         if (entUuid) {
-          const { data: studentsData, error: studentsErr } = await supabase
-            .from("enterprise_students")
-            .select("*")
-            .eq("enterprise_uuid", entUuid);
-          if (studentsErr) throw new Error(`Students: ${studentsErr.message}`);
-          setEnrolled(studentsData ?? []);
+          const [planRes, studentsRes] = await Promise.all([
+            supabase.from("plans").select("*").eq("user_uuid", entUuid).maybeSingle(),
+            supabase.from("enterprise_students").select("*").eq("enterprise_uuid", entUuid),
+          ]);
+          
+          if (planRes.error) throw new Error(`Plan: ${planRes.error.message}`);
+          if (studentsRes.error) throw new Error(`Students: ${studentsRes.error.message}`);
+          
+          setEnterprisePlan(planRes.data ?? null);
+          setEnrolled(studentsRes.data ?? []);
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -153,18 +213,39 @@ export default function TeacherPortal() {
 
   async function handleAdd() {
     if (!email || !dbUser || !enterpriseUuid) return;
+    
+    const maxCapacity = enterprisePlan?.curriculums_allocated ?? 0;
+    const currentCount = enrolled.length;
+    
+    if (maxCapacity > 0 && currentCount >= maxCapacity) {
+      setFormErr(`Cannot add student. Maximum capacity of ${maxCapacity} students reached.`);
+      return;
+    }
+    
+    if (maxCapacity === 0) {
+      setFormErr("No student licenses allocated. Contact your enterprise administrator.");
+      return;
+    }
+    
     setSubmitting(true);
     setFormErr(null);
     setSuccess(false);
 
     const { data, error } = await supabase.from("enterprise_students").insert({
-      student_email:   email.trim().toLowerCase(),
+      student_email: email.trim().toLowerCase(),
       enterprise_uuid: enterpriseUuid,
     }).select().single();
 
     setSubmitting(false);
-    if (error) { setFormErr(error.message); return; }
-    if (data) setEnrolled((prev) => [...prev, data as DBStudentCourse]);
+    
+    if (error) { 
+      setFormErr(error.message); 
+      return; 
+    }
+    
+    if (data) {
+      setEnrolled((prev) => [...prev, data as DBStudentCourse]);
+    }
     setEmail("");
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
@@ -172,7 +253,10 @@ export default function TeacherPortal() {
 
   async function handleRemove(id: string) {
     const { error } = await supabase.from("enterprise_students").delete().eq("id", id);
-    if (error) { console.error(error.message); return; }
+    if (error) { 
+      console.error(error.message); 
+      return; 
+    }
     setEnrolled((prev) => prev.filter((s) => s.id !== id));
   }
 
@@ -184,6 +268,10 @@ export default function TeacherPortal() {
       </div>
     </div>
   );
+
+  const maxCapacity = enterprisePlan?.curriculums_allocated ?? 0;
+  const currentCount = enrolled.length;
+  const isAtCapacity = maxCapacity > 0 && currentCount >= maxCapacity;
 
   return (
     <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto bg-[#080710] min-h-screen">
@@ -202,6 +290,11 @@ export default function TeacherPortal() {
           <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Not linked to an enterprise</p>
           <p className="text-white/25 text-xs mt-1">Contact your enterprise administrator to be added.</p>
         </div>
+      )}
+
+      {/* Capacity Banner */}
+      {!loading && enterpriseUuid && (
+        <CapacityBanner current={currentCount} max={maxCapacity} />
       )}
 
       {/* Stat card */}
@@ -226,22 +319,28 @@ export default function TeacherPortal() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                onKeyDown={(e) => e.key === "Enter" && !isAtCapacity && handleAdd()}
                 placeholder="student@university.edu"
-                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition"
+                disabled={isAtCapacity || !enterpriseUuid}
+                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed"
               />
             </div>
             <button
               onClick={handleAdd}
-              disabled={!email || submitting || loading || !enterpriseUuid}
+              disabled={!email || submitting || loading || !enterpriseUuid || isAtCapacity}
               className="flex items-center justify-center gap-2 px-6 py-3 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <UserPlus size={12} />
-              {submitting ? "Adding…" : "Add Student"}
+              {submitting ? "Adding…" : isAtCapacity ? "At Capacity" : "Add Student"}
             </button>
           </div>
 
-          {formErr && <p className="text-[#e8629a] text-xs mt-3">{formErr}</p>}
+          {formErr && (
+            <div className="mt-3 flex items-center gap-2">
+              <AlertCircle size={12} className="text-[#e8629a]" />
+              <p className="text-[#e8629a] text-xs">{formErr}</p>
+            </div>
+          )}
 
           {success && (
             <div className="mt-3">

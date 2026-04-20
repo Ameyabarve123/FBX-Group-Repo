@@ -1,9 +1,16 @@
+// components/dashboardComponents/types.ts
+
 export interface DBUser {
   id: string;
   client_name: string;
   is_admin: number;
   user_uuid: string;
   role: number;
+  created_at?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  company_name?: string;
 }
 
 export interface DBTicket {
@@ -13,6 +20,8 @@ export interface DBTicket {
   ticket_details: string;
   client_name: string;
   user_uuid: string;
+  resolved: number;
+  created_at?: string;
 }
 
 export interface DBOrder {
@@ -22,13 +31,17 @@ export interface DBOrder {
   price: string;
   tracking_number: string;
   user_uuid: string;
+  created_at?: string;
 }
 
 export interface DBPlan {
   id: string;
-  description: string;
-  price: number;
   user_uuid: string;
-  robots_allocated?: number;
-  robots_shipped?: number;
+  robots_shipped: number;
+  price: number;
+  robots_allocated: number;
+  description: string;
+  created_at: string;
+  curriculums_allocated?: number;
+  curricumlums_used?: number;
 }
