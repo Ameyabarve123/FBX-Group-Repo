@@ -49,7 +49,9 @@ export default function NavbarWithUser() {
   useEffect(() => {
     const fetchUserData = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (user) {
         const { data } = await supabase
@@ -64,12 +66,18 @@ export default function NavbarWithUser() {
     fetchUserData();
   }, []);
 
-  // Determine active page based on pathname
+  // Determine active page — sub-routes must be checked before their parent
   let activePage = "dashboard";
   if (pathname.includes("/profile")) {
     activePage = "profile";
-  } else if (pathname.includes("/admin")) {
-    activePage = "admin";
+  } else if (pathname.includes("/adminDashboard/enterprises")) {
+    activePage = "enterprises";
+  } else if (pathname.includes("/adminDashboard/tickets")) {
+    activePage = "tickets";
+  } else if (pathname.includes("/adminDashboard/orders")) {
+    activePage = "orders";
+  } else if (pathname.includes("/adminDashboard")) {
+    activePage = "dashboard";
   } else if (pathname.includes("/client")) {
     activePage = "client";
   }
