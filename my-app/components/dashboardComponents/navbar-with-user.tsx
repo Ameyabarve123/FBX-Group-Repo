@@ -23,10 +23,10 @@ function inferFromPath(pathname: string): {
     return { isAdmin: false, role: 0 };
   }
   if (pathname.includes("/studentDashboard")) {
-    return { isAdmin: false, role: 1 };
+    return { isAdmin: false, role: 2 };
   }
   if (pathname.includes("/clientDashboard")) {
-    return { isAdmin: false, role: 2 };
+    return { isAdmin: false, role: 3 };
   }
   return null;
 }

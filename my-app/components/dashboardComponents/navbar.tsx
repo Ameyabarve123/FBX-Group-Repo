@@ -80,8 +80,8 @@ function dashboardTitle(isAdmin: boolean, role: number | null | undefined): stri
   if (isAdmin) return "Admin Dashboard";
   const r = role === null || role === undefined ? NaN : Number(role);
   if (r === 0) return "Teacher Dashboard";
-  if (r === 1) return "Student Dashboard";
-  return "Client Dashboard";
+  if (r === 2) return "Student Dashboard";
+  return "Enterprise Dashboard";
 }
 
 export default function Navbar({
