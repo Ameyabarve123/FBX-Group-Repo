@@ -345,11 +345,10 @@ type InvoiceFormState = {
   lines: InvoiceLine[];
 };
 
+let lineCounter = 0;
+
 function newInvoiceLine(): InvoiceLine {
-  const id =
-    typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID
-      ? globalThis.crypto.randomUUID()
-      : `line-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const id = `line-${++lineCounter}`;
   return { id, name: "", description: "", price: "", quantity: "1" };
 }
 
@@ -422,7 +421,7 @@ export default function AdminHomepage() {
       try {
         const [usersRes, ticketsRes, ordersRes, plansRes] = await Promise.all([
           supabase.from("users").select("*"),
-          supabase.from("tickets").select("*"),
+          supabase.from("tickets").select("*").eq("resolved", 0),
           supabase.from("orders").select("*"),
           supabase.from("plans").select("*"),
         ]);
@@ -461,7 +460,7 @@ export default function AdminHomepage() {
   }
 
   async function handleResolve(ticket: DBTicket) {
-    const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
+    const { error } = await supabase.from("tickets").update({ resolved: 1 }).eq("id", ticket.id);
     if (error) { console.error("Failed to resolve ticket:", error.message); return; }
     setDbTickets((prev) => prev.filter((t) => t.id !== ticket.id));
     setSelectedTicket(null);
@@ -471,19 +470,22 @@ export default function AdminHomepage() {
     if (!selectedEnterprise) return;
     const existing = getPlanForUser(selectedEnterprise.user_uuid);
 
-    if (existing) {
-      const { error } = await supabase.from("plans").update(updated).eq("id", existing.id);
-      if (error) { console.error("Failed to update plan:", error.message); return; }
-      setDbPlans((prev) => prev.map((p) => p.id === existing.id ? { ...p, ...updated } : p));
-    } else {
-      const { data, error } = await supabase
-        .from("plans")
-        .insert({ ...updated, user_uuid: selectedEnterprise.user_uuid })
-        .select()
-        .single();
-      if (error) { console.error("Failed to create plan:", error.message); return; }
-      if (data) setDbPlans((prev) => [...prev, data]);
-    }
+    const payload = { ...updated, user_uuid: selectedEnterprise.user_uuid };
+
+    const { data, error } = await supabase
+      .from("plans")
+      .upsert(payload, { onConflict: "user_uuid" })
+      .select()
+      .single();
+
+    if (error) { console.error("Failed to save plan:", error.message); return; }
+    if (!data) return;
+
+    setDbPlans((prev) =>
+      existing
+        ? prev.map((p) => p.user_uuid === selectedEnterprise.user_uuid ? data : p)
+        : [...prev, data]
+    );
   }
 
   async function handleAddOrder(orderData: {
