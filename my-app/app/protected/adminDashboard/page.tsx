@@ -284,16 +284,35 @@ export default function AdminHomepage() {
       </div>
     </div>
 
-      {/* Stat cards + invoice button */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-        <div className="grid grid-cols-3 gap-3 flex-1 min-w-0">
-          <StatCard label="Enterprise"   value={loading ? "—" : String(enterprises.length).padStart(2, "0")} accent="teal"  />
-          <StatCard label="Open Tickets" value={loading ? "—" : String(dbTickets.length).padStart(2, "0")}   accent="pink"  />
-          <StatCard label="Orders"       value={loading ? "—" : String(dbOrders.length).padStart(2, "0")}    accent="slate" />
-        </div>
+      {/* Nav tiles */}
+      <div className="grid grid-cols-3 gap-3">
+        <NavTile
+          href="/protected/adminDashboard/enterprises"
+          icon={Building2}
+          label="Enterprise Accounts"
+          count={loading ? 0 : enterprises.length}
+          accent={{ text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" }}
+        />
+        <NavTile
+          href="/protected/adminDashboard/tickets"
+          icon={TicketCheck}
+          label="Support Tickets"
+          count={loading ? 0 : dbTickets.length}
+          accent={{ text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" }}
+        />
+        <NavTile
+          href="/protected/adminDashboard/orders"
+          icon={ShoppingCart}
+          label="Orders in Progress"
+          count={loading ? 0 : dbOrders.length}
+          accent={{ text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" }}
+        />
+      </div>
 
+      {/* Stat cards + invoice button */}
+      <div className="flex gap-3 items-stretch w-full">
         {/* Invoice button + dropdown */}
-        <div className="relative shrink-0 self-stretch sm:min-w-[5.5rem]">
+        <div className="relative w-full">
           <button
             type="button"
             onClick={() => { setInvoiceMenuOpen((v) => { if (!v) setInvoiceForm(emptyInvoiceForm()); return !v; }); }}
@@ -415,31 +434,6 @@ export default function AdminHomepage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Nav tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <NavTile
-          href="/protected/adminDashboard/enterprises"
-          icon={Building2}
-          label="Enterprise Accounts"
-          count={loading ? 0 : enterprises.length}
-          accent={{ text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" }}
-        />
-        <NavTile
-          href="/protected/adminDashboard/tickets"
-          icon={TicketCheck}
-          label="Support Tickets"
-          count={loading ? 0 : dbTickets.length}
-          accent={{ text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" }}
-        />
-        <NavTile
-          href="/protected/adminDashboard/orders"
-          icon={ShoppingCart}
-          label="Orders in Progress"
-          count={loading ? 0 : dbOrders.length}
-          accent={{ text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" }}
-        />
       </div>
 
       {/* Quick action: new enterprise */}
