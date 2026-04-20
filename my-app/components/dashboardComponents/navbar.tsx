@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  Users,
+  Building2,
   ShoppingCart,
   TicketCheck,
-  Package,
-  Star,
   Menu,
   X,
   LogOut,
@@ -33,7 +31,6 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
       {active && (
         <span className="absolute left-0 top-0 bottom-0 w-px bg-[#e8629a]" />
       )}
-
       <Icon
         size={15}
         className={
@@ -42,11 +39,9 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
             : "text-white/20 group-hover:text-white/40 transition-colors"
         }
       />
-
       <span className="text-xs uppercase tracking-[0.18em] font-medium">
         {label}
       </span>
-
       {active && (
         <span className="ml-auto text-[10px] text-[#e8629a]">●</span>
       )}
@@ -74,8 +69,18 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
   );
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-/** Labels match account type; keep in sync with `lib/dashboard-routing.ts`. */
+// ─── Section Label ────────────────────────────────────────────────────────────
+function NavSectionLabel({ label }: { label: string }) {
+  return (
+    <div className="px-5 pt-4 pb-1.5">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-white/15 font-medium">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function dashboardTitle(isAdmin: boolean, role: number | null | undefined): string {
   if (isAdmin) return "Admin Dashboard";
   const r = role === null || role === undefined ? NaN : Number(role);
@@ -84,6 +89,15 @@ function dashboardTitle(isAdmin: boolean, role: number | null | undefined): stri
   return "Enterprise Dashboard";
 }
 
+function dashboardHref(isAdmin: boolean, role: number | null | undefined): string {
+  if (isAdmin) return "/protected/adminDashboard";
+  const r = role === null || role === undefined ? NaN : Number(role);
+  if (r === 0) return "/protected/teacherDashboard";
+  if (r === 1) return "/protected/studentDashboard";
+  return "/protected/clientDashboard";
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
 export default function Navbar({
   activePage = "dashboard",
   isAdmin,
@@ -119,6 +133,7 @@ export default function Navbar({
     : "A";
 
   const dashboardLabel = dashboardTitle(isAdmin, role);
+  const dashboardPath  = dashboardHref(isAdmin, role);
 
   return (
     <>
@@ -156,28 +171,70 @@ export default function Navbar({
           </button>
         </div>
 
-        {/* Nav section label */}
-        <div className="px-5 pt-5 pb-2">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/15 font-medium">
-            Menu
-          </p>
-        </div>
-
         {/* Nav links */}
-        <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
+        <nav className="flex-1 flex flex-col border-t border-white/[0.04] overflow-y-auto">
 
           {isAdmin ? (
             <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
+              <NavSectionLabel label="General" />
+              <NavItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={activePage === "dashboard"}
+                href={dashboardPath}
+                onClick={closeSidebar}
+              />
+              <NavItem
+                icon={User}
+                label="Profile"
+                active={activePage === "profile"}
+                href="/protected/profile"
+                onClick={closeSidebar}
+              />
+
+              <NavSectionLabel label="Manage" />
+              <NavItem
+                icon={Building2}
+                label="Enterprises"
+                active={activePage === "enterprises"}
+                href="/protected/adminDashboard/enterprises"
+                onClick={closeSidebar}
+              />
+              <NavItem
+                icon={TicketCheck}
+                label="Tickets"
+                active={activePage === "tickets"}
+                href="/protected/adminDashboard/tickets"
+                onClick={closeSidebar}
+              />
+              <NavItem
+                icon={ShoppingCart}
+                label="Orders"
+                active={activePage === "orders"}
+                href="/protected/adminDashboard/orders"
+                onClick={closeSidebar}
+              />
             </>
           ) : (
             <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
+              <NavSectionLabel label="General" />
+              <NavItem
+                icon={LayoutDashboard}
+                label="Dashboard"
+                active={activePage === "dashboard"}
+                href={dashboardPath}
+                onClick={closeSidebar}
+              />
+              <NavItem
+                icon={User}
+                label="Profile"
+                active={activePage === "profile"}
+                href="/protected/profile"
+                onClick={closeSidebar}
+              />
             </>
           )}
-        
+
         </nav>
 
         {/* Bottom user */}
