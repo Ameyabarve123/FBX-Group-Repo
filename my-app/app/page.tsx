@@ -124,9 +124,6 @@ export default function Home() {
             The ultimate kick-starter to becoming a roboticist
           </div>
 
-          <p className="font-[var(--font-montserrat),Arial,sans-serif] font-medium text-base leading-[120%] text-white mt-2 max-w-[75%]">
-            This is a simple static site built with Next.js. Explore the features and get started today!
-          </p>
 
           <div className="flex flex-row gap-4 justify-center mt-4 overflow-visible">
             <a

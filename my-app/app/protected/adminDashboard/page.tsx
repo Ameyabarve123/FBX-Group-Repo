@@ -276,11 +276,13 @@ export default function AdminHomepage() {
         />
       )}
 
-      {/* Header */}
-      <div className="pb-4 border-b border-white/[0.125]">
-        <p className="text-xs uppercase tracking-[0.22em] text-white/80 mb-1">FBX Technologies</p>
+      {/* Page header */}
+      <div className="pb-4 border-b border-white/[0.125] flex items-center gap-4">
+      <img src="/fbx_logo.png" alt="Hero Image" className="max-h-[7vh] max-w-full" />
+      <div>
         <h1 className="text-white/75 text-2xl font-bold tracking-wide">Admin Dashboard</h1>
       </div>
+    </div>
 
       {/* Nav tiles */}
       <div className="grid grid-cols-3 gap-3">

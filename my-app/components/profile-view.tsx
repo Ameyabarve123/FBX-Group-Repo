@@ -15,7 +15,15 @@ interface DbUser {
   client_name?: string;
   is_admin?: number;
   created_at?: string;
+  role?: number; 
 }
+
+const roleMap: Record<number, string> = {
+  0: "Teacher",
+  1: "Admin",
+  2: "Student",
+  3: "Enterprise",
+};
 
 export function ProfileView({
   user,
@@ -26,6 +34,8 @@ export function ProfileView({
 }) {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "N/A";
+    console.log("dbUser:", dbUser);
+    console.log("role value:", dbUser?.role, "type:", typeof dbUser?.role);
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -79,12 +89,12 @@ export function ProfileView({
       {dbUser?.client_name && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Client Name</CardTitle>
+            <CardTitle className="text-sm font-medium">Name</CardTitle>
             <UserIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dbUser.client_name}</div>
-            <p className="text-xs text-muted-foreground">Your registered name</p>
+            <p className="text-xs text-muted-foreground">Your name</p>
           </CardContent>
         </Card>
       )}
@@ -97,8 +107,8 @@ export function ProfileView({
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
-            <Badge variant={dbUser?.is_admin === 1 ? "default" : "secondary"}>
-              {dbUser?.is_admin === 1 ? "Admin" : "User"}
+            <Badge variant="default">
+              {roleMap[dbUser?.role ?? 0]}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
@@ -169,7 +179,7 @@ export function ProfileView({
                   Account Type:
                 </span>
                 <span>
-                  {dbUser?.is_admin === 1 ? "Administrator" : "Regular User"}
+                  {dbUser?.role ?? 0}
                 </span>
               </div>
             </div>
