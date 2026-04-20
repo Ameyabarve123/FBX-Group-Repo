@@ -12,7 +12,7 @@ interface DbUser {
 const FUNBOTICS_DOCS_URL = "https://funbotics.gitbook.io/funbotics-docs";
 
 export const PAGE_BG: React.CSSProperties = {
-  background: 'linear-gradient(0deg, #000000 80%, #2e0f12 87%, #b21d3b 100%)',
+  background: 'linear-gradient(0deg, #000000 80%, #350e16 87%, #b21d40 100%)',
 };
 
 export default function StudentDashboard() {
