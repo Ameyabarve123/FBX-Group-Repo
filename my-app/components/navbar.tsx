@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
 const gradientButtonStyle: React.CSSProperties = {
   border: '2px solid transparent',
   background: 'linear-gradient(#0b081c) padding-box, linear-gradient(45deg, #629fcc, #c975b9) border-box',
@@ -9,6 +14,25 @@ const navLinkClass =
   'font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2';
 
 export default function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        if (!cancelled) setIsLoggedIn(Boolean(data.user));
+      } catch {
+        if (!cancelled) setIsLoggedIn(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <style>{`
@@ -27,9 +51,11 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <div className="font-[var(--font-montserrat),Arial,sans-serif] flex gap-4 justify-center flex-1 overflow-visible max-[768px]:hidden">
+          <a href="/" rel="noopener noreferrer" className={navLinkClass}>Home</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>About</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>Learn</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>Enterprise</a>
+          {isLoggedIn && <a href="/protected" className={navLinkClass}>Dashboard</a>}
         </div>
 
         {/* Desktop action buttons */}
@@ -45,11 +71,21 @@ export default function Navbar() {
           <a
             href="/auth/login"
             // target="_blank"
+            onClick={async (e) => {
+              if (isLoggedIn) {
+                e.preventDefault();
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                window.location.href = "/";
+              }
+            }}
+            
             rel="noopener noreferrer"
             className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full text-white no-underline"
             style={gradientButtonStyle}
           >
-            Sign In
+            {isLoggedIn ? "Sign Out": "Sign In"}
+            
           </a>
         </div>
 
@@ -81,6 +117,7 @@ export default function Navbar() {
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>About</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>Learn</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className={navLinkClass}>Enterprise</a>
+          {isLoggedIn && <a href="/protected" className={navLinkClass}>Dashboard</a>}
           <a
             href="https://example.com"
             target="_blank"
@@ -96,7 +133,7 @@ export default function Navbar() {
             className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full text-white no-underline"
             style={gradientButtonStyle}
           >
-            Sign In
+            {isLoggedIn ? "Sign Out": "Sign In"}
           </a>
         </div>
       </nav>

@@ -223,9 +223,11 @@ export default function Navbar({
 
         {/* Center nav links */}
         <div className="absolute left-1/2 -translate-x-1/2 flex gap-4 justify-center items-center">
+          <a href="/" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Home</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">About</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Learn</a>
           <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Enterprise</a>
+          <a href="/protected" rel="noopener noreferrer" className="font-[var(--font-montserrat),Arial,sans-serif] text-white no-underline text-[0.8rem] px-4 py-2">Dashboard</a>
         </div>
 
         {/* Right action buttons */}
@@ -242,6 +244,7 @@ export default function Navbar({
             <a href="https://example.com"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => { e.preventDefault(); handleLogout(); }}
             className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full text-white no-underline"
             style={{
               border: '2px solid transparent',
@@ -249,7 +252,7 @@ export default function Navbar({
               filter: 'drop-shadow(1rem 0rem 1.4rem rgba(187,60,164,0.2)) drop-shadow(-1rem 0rem 1.5rem rgba(11,113,187,0.125))',
             }}
           >
-            Sign In
+            Sign Out
           </a>
         </div>
       </header>
