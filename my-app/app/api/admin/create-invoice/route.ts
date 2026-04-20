@@ -198,6 +198,11 @@ export async function POST(req: NextRequest) {
     const dueDate = dueDateRaw || formatDueDateOneMonthAhead();
     const terms = termsRaw || DEFAULT_INVOICE_TERMS;
     const notes = getFormString(formData, "notes");
+    const enterpriseUserUuid = getFormString(
+      formData,
+      "enterpriseUserUuid",
+      "enterprise_user_uuid",
+    );
     const invoiceNumber = getFormString(
       formData,
       "invoiceNumber",
@@ -277,6 +282,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let enterpriseLogoBuffer: Buffer | null = null;
+    let enterpriseLogoMissing = false;
+    if (enterpriseUserUuid) {
+      const { data: enterpriseUser, error: enterpriseUserErr } = await supabase
+        .from("users")
+        .select("user_uuid, role")
+        .eq("user_uuid", enterpriseUserUuid)
+        .maybeSingle();
+
+      if (enterpriseUserErr) {
+        return NextResponse.json(
+          { error: "Failed to validate selected enterprise." },
+          { status: 500 },
+        );
+      }
+
+      if (!enterpriseUser || Number(enterpriseUser.role) !== 3) {
+        return NextResponse.json(
+          { error: "Selected enterprise is invalid." },
+          { status: 400 },
+        );
+      }
+
+      const logoStoragePath = `${enterpriseUserUuid}/logo`;
+      const { data: enterpriseLogoBlob, error: logoReadErr } = await supabase.storage
+        .from("enterprise-logos")
+        .download(logoStoragePath);
+
+      if (logoReadErr || !enterpriseLogoBlob) {
+        enterpriseLogoMissing = true;
+      } else {
+        const logoArrayBuffer = await enterpriseLogoBlob.arrayBuffer();
+        enterpriseLogoBuffer = Buffer.from(logoArrayBuffer);
+      }
+    }
+
     const billingName = envOrDefault("TO_NAME", DEFAULT_TO_NAME);
     const billingEmail = envOrDefault("TO_EMAIL", DEFAULT_TO_EMAIL);
     const billingAddress = envOrDefault("TO_ADDRESS", DEFAULT_TO_ADDRESS);
@@ -331,14 +372,24 @@ export async function POST(req: NextRequest) {
   // Header
   doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(34).text('Invoice', left, 52);
 
-  // Logo image
-  const logoX = right - 145;
-  const logoY = 36;
-  doc.image(logoPath, logoX - 5, logoY - 2, {
-    fit: [85, 85],
+  // Logos (FBX + optional enterprise, same scale)
+  const logoSize = 85;
+  const logoGap = 10;
+  const logoY = 34;
+  const fbxLogoX = right - logoSize - 5;
+  doc.image(logoPath, fbxLogoX, logoY, {
+    fit: [logoSize, logoSize],
     align: 'center',
     valign: 'center',
   });
+  if (enterpriseLogoBuffer) {
+    const enterpriseLogoX = fbxLogoX - logoGap - logoSize;
+    doc.image(enterpriseLogoBuffer, enterpriseLogoX, logoY, {
+      fit: [logoSize, logoSize],
+      align: "center",
+      valign: "center",
+    });
+  }
 
   doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(16).text(billingName, right - 190, 126, {
     width: 190,
@@ -544,6 +595,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse(new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }), {
       headers: {
         "Content-Disposition": 'attachment; filename="invoice.pdf"',
+        "X-Enterprise-Logo-Missing": enterpriseLogoMissing ? "1" : "0",
       },
     });
   } catch (err: unknown) {

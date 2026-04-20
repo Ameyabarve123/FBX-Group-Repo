@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Package,
   TicketCheck,
@@ -12,6 +12,7 @@ import {
   Check,
   FileText,
   UserPlus,
+  Image,
   LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -92,6 +93,18 @@ function getInitials(name: string) {
 function deriveStatus(order: DBOrder): Status {
   return order.tracking_number ? "in_transit" : "processing";
 }
+
+/** Matches backend `users.role` for Enterprise (see upload-logo API). */
+const ROLE_ENTERPRISE = 3;
+
+const LOGO_MAX_BYTES = 15 * 1024 * 1024;
+const LOGO_ALLOWED_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+] as const;
 
 function toModalOrder(o: DBOrder): ModalOrder {
   return { title: o.order_title, description: o.description, price: o.price, trackingNumber: o.tracking_number };
@@ -485,6 +498,43 @@ export default function EnterprisePortal() {
   const [selectedTicket, setSelectedTicket]   = useState<DBTicket | null>(null);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
 
+  const [hasEnterpriseLogo, setHasEnterpriseLogo] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl]       = useState<string | null>(null);
+  const [logoUploadError, setLogoUploadError]     = useState<string | null>(null);
+  const [logoUploading, setLogoUploading]         = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const refreshEnterpriseLogo = useCallback(
+    async (userId: string) => {
+      const { data: files, error } = await supabase.storage
+        .from("enterprise-logos")
+        .list(userId, { limit: 40 });
+      if (error || !files?.length) {
+        setHasEnterpriseLogo(false);
+        setLogoPreviewUrl(null);
+        return;
+      }
+      const hasLogo = files.some((f) => f.name === "logo");
+      if (!hasLogo) {
+        setHasEnterpriseLogo(false);
+        setLogoPreviewUrl(null);
+        return;
+      }
+      setHasEnterpriseLogo(true);
+      const path = `${userId}/logo`;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("enterprise-logos")
+        .createSignedUrl(path, 60 * 60);
+      if (!signErr && signed?.signedUrl) {
+        setLogoPreviewUrl(signed.signedUrl);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("enterprise-logos").getPublicUrl(path);
+      setLogoPreviewUrl(pub.publicUrl);
+    },
+    [supabase]
+  );
+
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
@@ -510,6 +560,13 @@ export default function EnterprisePortal() {
         setDbOrders(ordersRes.data ?? []);
         setOpenTickets(openRes.data ?? []);
         setResolvedTickets(resolvedRes.data ?? []);
+
+        if (userRes.data && Number(userRes.data.role) === ROLE_ENTERPRISE) {
+          await refreshEnterpriseLogo(user.id);
+        } else {
+          setHasEnterpriseLogo(false);
+          setLogoPreviewUrl(null);
+        }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
       } finally {
@@ -517,7 +574,7 @@ export default function EnterprisePortal() {
       }
     }
     fetchAll();
-  }, []);
+  }, [supabase, refreshEnterpriseLogo]);
 
   async function handleResolve(ticket: DBTicket) {
     const { error } = await supabase.from("tickets").update({ resolved: 1 }).eq("id", ticket.id);
@@ -525,6 +582,53 @@ export default function EnterprisePortal() {
     setOpenTickets((prev) => prev.filter((t) => t.id !== ticket.id));
     setResolvedTickets((prev) => [{ ...ticket, resolved: 1 }, ...prev]);
   }
+
+  async function handleEnterpriseLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setLogoUploadError(null);
+
+    if (file.size > LOGO_MAX_BYTES) {
+      setLogoUploadError("File exceeds the maximum size of 15 MB.");
+      return;
+    }
+    if (file.size === 0) {
+      setLogoUploadError("File is empty.");
+      return;
+    }
+    const mime = file.type.trim().toLowerCase();
+    if (!mime || !(LOGO_ALLOWED_MIME as readonly string[]).includes(mime)) {
+      setLogoUploadError("File type not allowed. Use JPEG, PNG, GIF, WebP, or SVG.");
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLogoUploadError("Not authenticated.");
+        return;
+      }
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/enterprise/upload-logo", { method: "POST", body: fd });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setLogoUploadError(typeof json.error === "string" ? json.error : "Upload failed.");
+        return;
+      }
+      await refreshEnterpriseLogo(user.id);
+    } catch {
+      setLogoUploadError("Something went wrong while uploading.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  const showEnterpriseLogoSection =
+    !loading && dbUser != null && Number(dbUser.role) === ROLE_ENTERPRISE;
 
   if (error) return (
     <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
@@ -587,10 +691,54 @@ export default function EnterprisePortal() {
         })}
       </div>
 
-      {/* Contract */}
-      <SectionCard title="Contract Details" icon={FileText} accent="teal">
-        <ContractSection plan={dbPlan} loading={loading} />
-      </SectionCard>
+      <div className={`grid gap-5 ${showEnterpriseLogoSection ? "lg:grid-cols-3" : ""}`}>
+        <div className={showEnterpriseLogoSection ? "lg:col-span-2" : ""}>
+          {/* Contract */}
+          <SectionCard title="Contract Details" icon={FileText} accent="teal">
+            <ContractSection plan={dbPlan} loading={loading} />
+          </SectionCard>
+        </div>
+
+        {/* Enterprise logo */}
+        {showEnterpriseLogoSection && (
+          <SectionCard title="Logo to appear on invoice" icon={Image} accent="violet">
+            <div className="px-4 py-4 flex flex-col gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                {hasEnterpriseLogo && logoPreviewUrl ? (
+                  <div className="flex-shrink-0 w-16 h-16 rounded-md border border-white/[0.08] bg-white/[0.03] overflow-hidden flex items-center justify-center">
+                    <img src={logoPreviewUrl} alt="Enterprise logo" className="max-w-full max-h-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-16 h-16 rounded-md border border-white/[0.06] border-dashed bg-white/[0.02] flex items-center justify-center">
+                    <Image size={20} className="text-white/15" aria-hidden />
+                  </div>
+                )}
+                <div className="min-w-0 pt-0.5">
+                  <p className="text-white/40 text-xs">PNG/JPG/GIF/WebP/SVG · max 15 MB · must be square</p>
+                  {logoUploadError && (
+                    <p className="text-[#e8629a] text-xs mt-2 leading-relaxed">{logoUploadError}</p>
+                  )}
+                </div>
+              </div>
+              <input
+                ref={logoFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={handleEnterpriseLogoFile}
+              />
+              <button
+                type="button"
+                onClick={() => logoFileInputRef.current?.click()}
+                disabled={logoUploading}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {logoUploading ? "Uploading…" : hasEnterpriseLogo ? "Upload new logo" : "Upload logo"}
+              </button>
+            </div>
+          </SectionCard>
+        )}
+      </div>
 
       {/* Orders & Tracking */}
       <SectionCard title="Orders & Tracking" icon={Package} count={dbOrders.length} accent="slate">
