@@ -70,23 +70,21 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    if (!user) {
-      return supabaseResponse;
-    }
 
-    const url = request.nextUrl.clone();
-    const { data: dbUser } = await supabase
-      .from("users")
-      .select("is_admin, role")
-      .eq("user_uuid", claims?.sub ?? "")
-      .maybeSingle<DashboardUser>();
+    return supabaseResponse;
+    // const url = request.nextUrl.clone();
+    // const { data: dbUser } = await supabase
+    //   .from("users")
+    //   .select("is_admin, role")
+    //   .eq("user_uuid", claims?.sub ?? "")
+    //   .maybeSingle<DashboardUser>();
 
-    url.pathname = getDashboardPathForUser(dbUser ?? { is_admin: 0 });
-    const redirectResponse = NextResponse.redirect(url);
-    for (const c of supabaseResponse.cookies.getAll()) {
-      redirectResponse.cookies.set(c.name, c.value);
-    }
-    return redirectResponse;
+    // url.pathname = getDashboardPathForUser(dbUser ?? { is_admin: 0 });
+    // const redirectResponse = NextResponse.redirect(url);
+    // for (const c of supabaseResponse.cookies.getAll()) {
+    //   redirectResponse.cookies.set(c.name, c.value);
+    // }
+    // return redirectResponse;
   }
 
   if (user && claims?.sub && isProtected) {

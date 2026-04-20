@@ -90,7 +90,7 @@ export default function Navbar() {
             Contact Us
           </a>
           <a
-            href="https://example.com"
+            href="/auth/login"
             target="_blank"
             rel="noopener noreferrer"
             className="font-[var(--font-montserrat),Arial,sans-serif] px-4 py-2 text-[0.8rem] cursor-pointer rounded-full text-white no-underline"
