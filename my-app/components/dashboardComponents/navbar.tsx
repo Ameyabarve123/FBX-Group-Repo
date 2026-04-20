@@ -133,24 +133,24 @@ export default function Navbar({
       <aside
         className={`
           fixed inset-y-0 left-0 z-30
-          w-56 flex-shrink-0 bg-[#080710] border-r border-white/[0.06] flex flex-col
+          w-56 flex-shrink-0 bg-[#080710] border-r border-white/[0.125] flex flex-col
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         {/* Logo row */}
-        <div className="px-5 py-5 flex items-center justify-between border-b border-white/[0.06]">
+        <div className="px-5 py-5 flex items-center justify-between border-b border-white/[0.125]">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/20 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50 mb-1">
               FBX Technologies
             </p>
-            <span className="text-white/60 text-base font-light tracking-wide">
+            <span className="text-white font-bold tracking-wide text-base">
               {dashboardLabel}
             </span>
           </div>
           <button
             onClick={toggleSidebar}
-            className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-white/50 transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors flex-shrink-0"
           >
             <X size={16} />
           </button>
@@ -158,14 +158,13 @@ export default function Navbar({
 
         {/* Nav section label */}
         <div className="px-5 pt-5 pb-2">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/15 font-medium">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50">
             Menu
           </p>
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 flex flex-col border-t border-white/[0.04]">
-
+        <nav className="flex-1 flex flex-col border-t border-white/[0.06]">
           {isAdmin ? (
             <>
               <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
@@ -177,32 +176,30 @@ export default function Navbar({
               <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
             </>
           )}
-        
         </nav>
 
         {/* Bottom user */}
-        <div className="border-t border-white/[0.06] px-5 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-sm bg-[#9b7fe8]/10 ring-1 ring-[#9b7fe8]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#9b7fe8] flex-shrink-0">
+        <div className="border-t border-white/[0.125] px-5 py-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#629fcc]/10 ring-1 ring-[#629fcc]/25 flex items-center justify-center text-xs font-bold tracking-widest text-[#629fcc] flex-shrink-0">
             {initials}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-sm text-white/50 font-medium truncate">
+            <span className="text-sm font-bold text-white truncate">
               {isAdmin ? "Admin" : (clientName ?? "Client")}
             </span>
-            <span className="text-xs text-white/20 truncate tracking-wide">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50 truncate">
               {dashboardLabel}
             </span>
           </div>
           <button
             onClick={handleLogout}
             title="Log out"
-            className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-[#e8629a] transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-[#c975b9] transition-colors flex-shrink-0"
           >
             <LogOut size={15} />
           </button>
         </div>
       </aside>
-
       {/* ── Top Bar ── */}
       <header
         className={`
