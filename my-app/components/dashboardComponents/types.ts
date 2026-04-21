@@ -43,5 +43,4 @@ export interface DBPlan {
   description: string;
   created_at: string;
   curriculums_allocated?: number;
-  curricumlums_used?: number;
 }
