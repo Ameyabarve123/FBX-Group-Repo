@@ -14,6 +14,8 @@ import {
   LogOut,
   User,
   LucideIcon,
+  FileText,
+  GraduationCap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -81,7 +83,8 @@ function dashboardTitle(isAdmin: boolean, role: number | null | undefined): stri
   const r = role === null || role === undefined ? NaN : Number(role);
   if (r === 0) return "Teacher Dashboard";
   if (r === 2) return "Student Dashboard";
-  return "Enterprise Dashboard";
+  if (r === 3) return "Enterprise Dashboard";
+  return "Client Dashboard";
 }
 
 export default function Navbar({
@@ -119,6 +122,56 @@ export default function Navbar({
     : "A";
 
   const dashboardLabel = dashboardTitle(isAdmin, role);
+
+  // Determine which sidebar items to show based on role
+  const getSidebarItems = () => {
+    // Admin sidebar
+    if (isAdmin) {
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/protected", activeKey: "dashboard" },
+        { icon: Users, label: "Enterprises", href: "/protected/adminDashboard/enterprises", activeKey: "enterprises" },
+        { icon: ShoppingCart, label: "Orders", href: "/protected/adminDashboard/orders", activeKey: "orders" },
+        { icon: TicketCheck, label: "Tickets", href: "/protected/adminDashboard/tickets", activeKey: "tickets" },
+        { icon: User, label: "Profile", href: "/protected/profile", activeKey: "profile" },
+      ];
+    }
+    
+    // Enterprise/Client sidebar (role === 3)
+    if (role === 3) {
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/protected/clientDashboard", activeKey: "clientDashboard" },
+        { icon: FileText, label: "Contract", href: "/protected/clientDashboard/contract", activeKey: "clientContract" },
+        { icon: ShoppingCart, label: "Orders", href: "/protected/clientDashboard/orders", activeKey: "clientOrders" },
+        { icon: GraduationCap, label: "Teachers & Students", href: "/protected/clientDashboard/teachers", activeKey: "clientTeachers" },
+        { icon: TicketCheck, label: "Tickets", href: "/protected/clientDashboard/tickets", activeKey: "clientTickets" },
+        { icon: User, label: "Profile", href: "/protected/profile", activeKey: "profile" },
+      ];
+    }
+    
+    // Teacher sidebar (role === 0)
+    if (role === 0) {
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/protected/teacherDashboard", activeKey: "dashboard" },
+        { icon: User, label: "Profile", href: "/protected/profile", activeKey: "profile" },
+      ];
+    }
+    
+    // Student sidebar (role === 2)
+    if (role === 2) {
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/protected/studentDashboard", activeKey: "dashboard" },
+        { icon: User, label: "Profile", href: "/protected/profile", activeKey: "profile" },
+      ];
+    }
+    
+    // Default fallback
+    return [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/protected", activeKey: "dashboard" },
+      { icon: User, label: "Profile", href: "/protected/profile", activeKey: "profile" },
+    ];
+  };
+
+  const sidebarItems = getSidebarItems();
 
   return (
     <>
@@ -165,20 +218,16 @@ export default function Navbar({
 
         {/* Nav links */}
         <nav className="flex-1 flex flex-col border-t border-white/[0.06]">
-          {isAdmin ? (
-            <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={Users} label="Enterprises" active={activePage === "enterprises"} href="/protected/adminDashboard/enterprises" onClick={closeSidebar} />
-              <NavItem icon={ShoppingCart} label="Orders" active={activePage === "orders"} href="/protected/adminDashboard/orders" onClick={closeSidebar} />
-              <NavItem icon={TicketCheck} label="Tickets" active={activePage === "tickets"} href="/protected/adminDashboard/tickets" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
-            </>
-          ) : (
-            <>
-              <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
-              <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
-            </>
-          )}
+          {sidebarItems.map((item) => (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              active={activePage === item.activeKey}
+              href={item.href}
+              onClick={closeSidebar}
+            />
+          ))}
         </nav>
 
         {/* Bottom user */}
