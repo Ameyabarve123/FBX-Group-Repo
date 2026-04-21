@@ -47,7 +47,7 @@ function ClickableStatCard({
       className={`group relative rounded-xl bg-[#0d0b1e] border ${a.border} p-5 overflow-hidden hover:border-opacity-60 hover:bg-white/[0.02] transition-all duration-200 text-left w-full cursor-pointer`}
     >
       <div className={`absolute inset-x-0 top-0 h-px ${a.bg}`} />
-      <p className="text-[10px] uppercase tracking-[0.18em] text-white/55 font-bold mb-3">{label}</p>
+      <p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-3">{label}</p>
       <div className="flex items-center justify-between">
         <p className={`text-4xl font-light ${a.text} tabular-nums`}>{value}</p>
         <ArrowRight size={16} className={`${a.text} opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0`} />
@@ -87,7 +87,7 @@ function NavTile({
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-white/55 text-xs font-bold uppercase tracking-[0.18em]">{label}</span>
+        <span className="text-white/100 text-xs font-bold uppercase tracking-[0.18em]">{label}</span>
         <ArrowRight size={13} className={`${a.text} opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0 duration-200`} />
       </div>
     </button>
@@ -153,7 +153,7 @@ export default function ClientDashboard() {
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
           <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -171,10 +171,10 @@ export default function ClientDashboard() {
         <div className="flex items-center gap-4">
           <img src="/fbx_logo.png" alt="FBX Logo" className="max-h-[7vh] max-w-full" />
           <div>
-            <h1 className="text-white/75 text-2xl font-bold tracking-wide">Client Dashboard</h1>
+            <h1 className="text-white/100 text-2xl font-bold tracking-wide">Client Dashboard</h1>
           </div>
         </div>
-        <p className="text-white/35 text-sm font-light tracking-wide">
+        <p className="text-white/100 text-sm font-light tracking-wide">
           {loading ? "Loading portal…" : `${dbUser?.client_name ?? "Enterprise"}'s Portal`}
         </p>
       </div>
@@ -241,7 +241,7 @@ export default function ClientDashboard() {
 
       {/* Quick Actions */}
       <div className="pt-4 space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">Quick Actions</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100">Quick Actions</p>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/protected/clientDashboard/teachers?action=createTeacher")}
