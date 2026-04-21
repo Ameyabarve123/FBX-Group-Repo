@@ -194,35 +194,22 @@ export default function ClientDashboard() {
           onClick={() => handleStatClick("/protected/clientDashboard/orders")}
         />
         <ClickableStatCard
-          label="Open Tickets"
-          value={loading ? "—" : String(openTickets.length).padStart(2, "0")}
-          accent="pink"
-          onClick={() => handleStatClick("/protected/clientDashboard/tickets")}
-        />
-        <ClickableStatCard
           label="Students Enrolled"
           value={loading ? "—" : `${studentCount} / ${totalStudentSeats}`}
           accent="slate"
           onClick={() => handleStatClick("/protected/clientDashboard/teachers")}
         />
+        <ClickableStatCard
+          label="Open Tickets"
+          value={loading ? "—" : String(openTickets.length).padStart(2, "0")}
+          accent="pink"
+          onClick={() => handleStatClick("/protected/clientDashboard/tickets")}
+        />
       </div>
 
-      {/* Navigation Tiles */}
+      
       <div className="grid grid-cols-2 gap-3">
-        <NavTile
-          href="/protected/clientDashboard/orders"
-          icon={Package}
-          label="Orders & Tracking"
-          count={loading ? 0 : dbOrders.length}
-          accent="blue"
-        />
-        <NavTile
-          href="/protected/clientDashboard/tickets"
-          icon={TicketCheck}
-          label="Support Tickets"
-          count={loading ? 0 : openTickets.length}
-          accent="pink"
-        />
+        {/* Navigation Tiles */}
         <NavTile
           href="/protected/clientDashboard/contract"
           icon={FileText}
@@ -231,11 +218,25 @@ export default function ClientDashboard() {
           accent="teal"
         />
         <NavTile
+          href="/protected/clientDashboard/orders"
+          icon={Package}
+          label="Orders & Tracking"
+          count={loading ? 0 : dbOrders.length}
+          accent="blue"
+        />
+        <NavTile
           href="/protected/clientDashboard/teachers"
           icon={Users}
           label="Teachers & Students"
           count={teacherCount + studentCount}
           accent="slate"
+        />
+        <NavTile
+          href="/protected/clientDashboard/tickets"
+          icon={TicketCheck}
+          label="Support Tickets"
+          count={loading ? 0 : openTickets.length}
+          accent="pink"
         />
       </div>
 

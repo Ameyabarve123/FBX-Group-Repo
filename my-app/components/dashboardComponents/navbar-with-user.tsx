@@ -68,9 +68,9 @@ export default function NavbarWithUser() {
 
   // Determine active page — sub-routes must be checked before their parent
   let activePage = "dashboard";
-  if (pathname.includes("/profile")) {
-    activePage = "profile";
-  } else if (pathname.includes("/adminDashboard/enterprises")) {
+  
+  // Admin Dashboard pages
+  if (pathname.includes("/adminDashboard/enterprises")) {
     activePage = "enterprises";
   } else if (pathname.includes("/adminDashboard/tickets")) {
     activePage = "tickets";
@@ -78,8 +78,22 @@ export default function NavbarWithUser() {
     activePage = "orders";
   } else if (pathname.includes("/adminDashboard")) {
     activePage = "dashboard";
-  } else if (pathname.includes("/client")) {
-    activePage = "client";
+  }
+  // Client/Enterprise Dashboard pages - ALL sub-routes show the client sidebar
+  else if (pathname.includes("/clientDashboard/contract")) {
+    activePage = "clientContract";
+  } else if (pathname.includes("/clientDashboard/teachers")) {
+    activePage = "clientTeachers";
+  } else if (pathname.includes("/clientDashboard/orders")) {
+    activePage = "clientOrders";
+  } else if (pathname.includes("/clientDashboard/tickets")) {
+    activePage = "clientTickets";
+  } else if (pathname.includes("/clientDashboard")) {
+    activePage = "clientDashboard";
+  }
+  // Profile page
+  else if (pathname.includes("/profile")) {
+    activePage = "profile";
   }
 
   const inferred = inferFromPath(pathname);

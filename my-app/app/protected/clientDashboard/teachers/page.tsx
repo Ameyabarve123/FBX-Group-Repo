@@ -197,60 +197,160 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
   const [createdTeacher, setCreatedTeacher] = useState<Teacher | null>(null);
   const [createdPassword, setCreatedPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [existingUserData, setExistingUserData] = useState<{ uuid: string; name: string } | null>(null);
+
+  // Check if user exists when email is entered
+  async function checkUserExists(emailToCheck: string) {
+    if (!emailToCheck) {
+      setIsExistingUser(false);
+      setExistingUserData(null);
+      return;
+    }
+    
+    // Use the RPC function that bypasses RLS
+    const { data, error } = await supabase
+      .rpc('get_user_by_email', { user_email: emailToCheck });
+    
+    if (error || !data || data.length === 0) {
+      setIsExistingUser(false);
+      setExistingUserData(null);
+      return;
+    }
+    
+    const user = data[0];
+    setIsExistingUser(true);
+    setExistingUserData({ uuid: user.user_uuid, name: user.client_name || "" });
+    
+    // Auto-populate name if name field is empty
+    if (user.client_name && !name) {
+      setName(user.client_name);
+    }
+  }
 
   async function handleCreate() {
-    if (!name || !email || !password) return;
+    if (!name || !email) return;
+    
+    // For new users, password is required
+    if (!isExistingUser && !password) {
+      setErr("Password is required for new accounts.");
+      return;
+    }
+    
     setCreating(true);
     setErr(null);
   
-    const { data: { session: existingSession } } = await supabase.auth.getSession();
-    const { data: authData, error: authErr } = await supabase.auth.signUp({ email, password });
-    if (authErr || !authData.user) {
-      setErr(authErr?.message ?? "Sign-up failed");
-      setCreating(false);
-      return;
-    }
-  
-    const teacherUuid = authData.user.id;
-    const { error: upsertErr } = await supabase.from("users").upsert(
-      { 
-        client_name: name, 
-        user_uuid: teacherUuid, 
-        is_admin: 0, 
-        role: 0,
-        email: email  // ← THIS IS THE FIX
-      },
-      { onConflict: "user_uuid" }
-    );
-  
-    if (!upsertErr) {
+    try {
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      let teacherUuid: string;
+      
+      if (isExistingUser && existingUserData) {
+        // EXISTING USER PATH - just link them
+        teacherUuid = existingUserData.uuid;
+        
+        // Update name if changed and different
+        if (name && existingUserData.name !== name) {
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({ client_name: name })
+            .eq("user_uuid", teacherUuid);
+          
+          if (updateError) {
+            console.error("Failed to update name:", updateError);
+          }
+        }
+      } else {
+        // NEW USER PATH - create auth user
+        const { data: authData, error: authErr } = await supabase.auth.signUp({ email, password });
+        if (authErr || !authData.user) {
+          setErr(authErr?.message ?? "Sign-up failed");
+          setCreating(false);
+          return;
+        }
+        
+        teacherUuid = authData.user.id;
+        
+        // Insert into users table
+        const { error: upsertErr } = await supabase.from("users").upsert(
+          { 
+            client_name: name, 
+            user_uuid: teacherUuid, 
+            is_admin: 0, 
+            role: 0,
+            email: email
+          },
+          { onConflict: "user_uuid" }
+        );
+        
+        if (upsertErr) {
+          setErr(upsertErr.message);
+          setCreating(false);
+          return;
+        }
+      }
+      
+      // Check if teacher is already linked to this enterprise
+      const { data: existingLink } = await supabase
+        .from("enterprise_teachers")
+        .select("id")
+        .eq("enterprise_uuid", enterpriseUuid)
+        .eq("client_uuid", teacherUuid)
+        .maybeSingle();
+      
+      if (existingLink) {
+        setErr("This user is already a teacher for your enterprise.");
+        setCreating(false);
+        return;
+      }
+      
+      // Link teacher to enterprise
       const { error: linkErr } = await supabase.from("enterprise_teachers").insert({
         enterprise_uuid: enterpriseUuid,
         client_uuid: teacherUuid,
       });
-      if (linkErr) console.error("Failed to link teacher:", linkErr.message);
+      
+      if (linkErr) {
+        setErr(linkErr.message);
+        setCreating(false);
+        return;
+      }
+      
+      // Restore original session if we created a new user (not for existing users)
+      if (!isExistingUser && existingSession) {
+        await supabase.auth.setSession({
+          access_token: existingSession.access_token,
+          refresh_token: existingSession.refresh_token,
+        });
+      }
+      
+      // Get final user data
+      const { data: userData } = await supabase
+        .from("users")
+        .select("email, client_name")
+        .eq("user_uuid", teacherUuid)
+        .single();
+      
+      const newTeacher = {
+        id: teacherUuid,
+        client_name: userData?.client_name || name,
+        email: userData?.email || email,
+        user_uuid: teacherUuid,
+      };
+      
+      setCreatedTeacher(newTeacher);
+      if (!isExistingUser && password) {
+        setCreatedPassword(password);
+      } else {
+        setCreatedPassword("(existing user - linked to enterprise)");
+      }
+      setDone(true);
+      onCreated(newTeacher, isExistingUser ? "" : password);
+      
+    } catch (err: unknown) {
+      setErr(err instanceof Error ? err.message : "Failed to create or link teacher");
+    } finally {
+      setCreating(false);
     }
-  
-    if (existingSession) {
-      await supabase.auth.setSession({
-        access_token: existingSession.access_token,
-        refresh_token: existingSession.refresh_token,
-      });
-    }
-  
-    setCreating(false);
-    if (upsertErr) { setErr(upsertErr.message); return; }
-  
-    const newTeacher = {
-      id: teacherUuid,
-      client_name: name,
-      email: email,
-      user_uuid: teacherUuid,
-    };
-    setCreatedTeacher(newTeacher);
-    setCreatedPassword(password);
-    setDone(true);
-    onCreated(newTeacher, password);
   }
 
   if (done && createdTeacher) return (
@@ -260,13 +360,23 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
         <div className="w-12 h-12 rounded-xl bg-[#4ecdc4]/10 flex items-center justify-center">
           <CheckCircle2 size={22} className="text-[#4ecdc4]" />
         </div>
-        <p className="text-white/60 text-xs uppercase tracking-[0.18em] font-bold">Teacher Account Created</p>
+        <p className="text-white/60 text-xs uppercase tracking-[0.18em] font-bold">
+          {createdPassword === "(existing user - linked to enterprise)" 
+            ? "Teacher Linked Successfully" 
+            : "Teacher Account Created"}
+        </p>
         <div className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 text-left space-y-2">
           <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Name</p><p className="text-white/60 text-sm">{createdTeacher.client_name}</p></div>
           <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Email</p><p className="text-white/60 text-sm font-mono">{createdTeacher.email}</p></div>
-          <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Password</p><p className="text-white/60 text-sm font-mono">{createdPassword}</p></div>
+          {createdPassword && createdPassword !== "(existing user - linked to enterprise)" && (
+            <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Password</p><p className="text-white/60 text-sm font-mono">{createdPassword}</p></div>
+          )}
         </div>
-        <p className="text-white/20 text-xs">Save these credentials — they won't be shown again.</p>
+        <p className="text-white/20 text-xs">
+          {createdPassword === "(existing user - linked to enterprise)" 
+            ? "The user has been added as a teacher to your enterprise." 
+            : "Save these credentials — they won't be shown again."}
+        </p>
         <button onClick={onClose} className="mt-1 px-6 py-2 rounded-lg border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/15 hover:text-white/60 transition">Done</button>
       </div>
     </div>
@@ -281,21 +391,60 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
             <div className="w-7 h-7 rounded-lg bg-[#4ecdc4]/10 flex items-center justify-center">
               <UserPlus size={14} className="text-[#4ecdc4]" />
             </div>
-            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Create Teacher Account</span>
+            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">
+              {isExistingUser ? "Link Existing Teacher" : "Create Teacher Account"}
+            </span>
           </div>
           <button onClick={onClose} className="text-white/25 hover:text-white/60 transition text-lg leading-none">×</button>
         </div>
         <div className="space-y-3">
-          <div><FieldLabel>Full Name</FieldLabel><TextInput value={name} onChange={setName} placeholder="e.g. Jane Smith" /></div>
-          <div><FieldLabel>Email</FieldLabel><TextInput value={email} onChange={setEmail} placeholder="teacher@school.edu" type="email" /></div>
-          <div><FieldLabel>Password</FieldLabel><TextInput value={password} onChange={setPassword} placeholder="Min. 8 characters" type="password" /></div>
+          <div>
+            <FieldLabel>Full Name</FieldLabel>
+            <TextInput value={name} onChange={setName} placeholder="e.g. Jane Smith" />
+          </div>
+          <div>
+            <FieldLabel>Email</FieldLabel>
+            <TextInput 
+              value={email} 
+              onChange={(value) => {
+                setEmail(value);
+                checkUserExists(value);
+              }} 
+              placeholder="teacher@school.edu" 
+              type="email" 
+            />
+          </div>
+          {!isExistingUser && (
+            <div>
+              <FieldLabel>Password <span className="text-[#c975b9]">*</span></FieldLabel>
+              <TextInput 
+                value={password} 
+                onChange={setPassword} 
+                placeholder="Min. 8 characters" 
+                type="password" 
+              />
+            </div>
+          )}
+          {isExistingUser && (
+            <div className="bg-[#4ecdc4]/5 border border-[#4ecdc4]/20 rounded-lg p-3">
+              <p className="text-[#4ecdc4] text-xs">✓ This user already exists. They will be linked as a teacher to your enterprise.</p>
+            </div>
+          )}
           {err && <p className="text-[#c975b9] text-xs tracking-wide">{err}</p>}
-          <p className="text-white/20 text-xs">The teacher will receive a confirmation email and can log in to the Teacher Portal.</p>
+          <p className="text-white/20 text-xs">
+            {isExistingUser 
+              ? "This user will be added as a teacher to your enterprise. No new account will be created."
+              : "Let the teacher know the email and password you used and they can change it when they login."}
+          </p>
         </div>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/30 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/50 transition">Cancel</button>
-          <button onClick={handleCreate} disabled={!name || !email || !password || creating} className="flex-1 py-2.5 rounded-lg bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#4ecdc4]/15 transition disabled:opacity-30 disabled:cursor-not-allowed">
-            {creating ? "Creating…" : "Create Account"}
+          <button 
+            onClick={handleCreate} 
+            disabled={!name || !email || creating || (!isExistingUser && !password)} 
+            className="flex-1 py-2.5 rounded-lg bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#4ecdc4]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {creating ? "Processing…" : isExistingUser ? "Link Teacher" : "Create Account"}
           </button>
         </div>
       </div>
@@ -464,16 +613,7 @@ export default function TeachersPage() {
     fetchData();
   }, [supabase]);
 
-  async function handleDeleteTeacher(teacherUuid: string) {
-    const { error } = await supabase
-      .from("enterprise_teachers")
-      .delete()
-      .eq("client_uuid", teacherUuid)
-      .eq("enterprise_uuid", enterpriseUuid);
-    
-    if (error) { console.error("Failed to delete teacher:", error.message); return; }
-    setTeachers((prev) => prev.filter((t) => t.user_uuid !== teacherUuid));
-  }
+  // REMOVED: handleDeleteTeacher function - teachers cannot be deleted
 
   async function handleDeleteStudent(studentId: string) {
     const { error } = await supabase
@@ -549,7 +689,7 @@ export default function TeachersPage() {
         <CapacityBanner current={currentCount} max={maxCapacity} isAtCapacity={isAtCapacity} />
       )}
 
-      {/* Teachers Section */}
+      {/* Teachers Section - Delete button removed */}
       <SectionCard title="Teachers" icon={UserPlus} count={teachers.length} accent="teal">
         <div className="px-5 py-4 border-b border-white/[0.06] flex justify-end">
           <button
@@ -560,7 +700,7 @@ export default function TeachersPage() {
           </button>
         </div>
 
-        <TableHeader cols={["Teacher", "Email", ""]} />
+        <TableHeader cols={["Teacher", "Email"]} />
         
         {loading ? (
           [1, 2].map((i) => <LoadingRow key={i} />)
@@ -570,7 +710,7 @@ export default function TeachersPage() {
           teachers.map((t) => (
             <div
               key={t.id}
-              className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02] transition-colors group"
+              className="px-5 py-4 grid sm:grid-cols-2 items-center gap-3 border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02] transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Avatar initials={getInitials(t.client_name)} accent="teal" />
@@ -579,14 +719,6 @@ export default function TeachersPage() {
               <div className="flex items-center gap-2 text-white/35 text-sm">
                 <Mail size={12} className="text-white/25" />
                 <span className="truncate">{t.email}</span>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={() => handleDeleteTeacher(t.user_uuid)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-white/25 hover:text-red-400 p-1"
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
             </div>
           ))
