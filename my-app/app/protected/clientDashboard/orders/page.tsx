@@ -72,10 +72,10 @@ function TrackingCopy({ value }: { value: string }) {
       className="flex items-center gap-1.5 group/copy"
       title="Copy tracking number"
     >
-      <span className="text-xs text-white/30 font-mono truncate max-w-[140px]">{value}</span>
+      <span className="text-xs text-white/100 font-mono truncate max-w-[140px]">{value}</span>
       {copied
         ? <Check size={11} className="text-[#629fcc] flex-shrink-0" />
-        : <Copy size={11} className="text-white/20 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+        : <Copy size={11} className="text-white/100 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
       }
     </button>
   );
@@ -121,7 +121,7 @@ export default function OrdersPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
           <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -147,14 +147,14 @@ export default function OrdersPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/protected/clientDashboard")}
-            className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] transition"
+            className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] transition"
           >
             <ArrowLeft size={11} />Back
           </button>
         </div>
         <div>
-          <h1 className="text-white/75 text-2xl font-bold tracking-wide">Orders & Tracking</h1>
-          <p className="text-white/35 text-sm font-light tracking-wide mt-1">Monitor your shipments and deliveries</p>
+          <h1 className="text-white/100 text-2xl font-bold tracking-wide">Orders & Tracking</h1>
+          <p className="text-white/100 text-sm font-light tracking-wide mt-1">Monitor your shipments and deliveries</p>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function OrdersPage() {
             <div className={`w-7 h-7 rounded-lg ${ACCENTS.blue.bg} flex items-center justify-center`}>
               <Package size={14} className={ACCENTS.blue.text} />
             </div>
-            <h2 className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Active Orders</h2>
+            <h2 className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Active Orders</h2>
           </div>
           <span className={`text-xs font-bold px-2 py-0.5 rounded ${ACCENTS.blue.bg} ${ACCENTS.blue.text} tracking-wider`}>
             {String(dbOrders.length).padStart(2, "0")}
@@ -174,23 +174,23 @@ export default function OrdersPage() {
 
         {/* Table Header */}
         <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06]" style={{ gridTemplateColumns: "2fr 1.5fr 1fr" }}>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Order</span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Tracking</span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Status</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Order</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Tracking</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Status</span>
         </div>
 
         {loading ? (
           [1, 2, 3].map((i) => (
             <div key={i} className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.06]">
-              <div className="w-9 h-9 rounded-lg bg-white/5 flex-shrink-0" />
+              <div className="w-9 h-9 rounded-lg bg-white/100 flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-white/5 rounded w-1/3" />
-                <div className="h-2.5 bg-white/5 rounded w-1/5" />
+                <div className="h-3 bg-white/100 rounded w-1/3" />
+                <div className="h-2.5 bg-white/100 rounded w-1/5" />
               </div>
             </div>
           ))
         ) : dbOrders.length === 0 ? (
-          <div className="px-5 py-8 text-center text-white/20 text-xs tracking-[0.18em] uppercase">No active orders</div>
+          <div className="px-5 py-8 text-center text-white/100 text-xs tracking-[0.18em] uppercase">No active orders</div>
         ) : (
           dbOrders.map((o) => {
             const status = deriveStatus(o);
@@ -203,12 +203,12 @@ export default function OrdersPage() {
                 <div className="flex items-center gap-3">
                   <Avatar initials={getInitials(o.order_title)} accent="blue" />
                   <div className="min-w-0">
-                    <p className="text-white/60 text-sm truncate">{o.order_title}</p>
-                    <p className="text-white/25 text-xs">{o.price}</p>
+                    <p className="text-white/100 text-sm truncate">{o.order_title}</p>
+                    <p className="text-white/100 text-xs">{o.price}</p>
                   </div>
                 </div>
                 <div className="hidden sm:flex items-center">
-                  {o.tracking_number ? <TrackingCopy value={o.tracking_number} /> : <span className="text-white/20 text-xs">—</span>}
+                  {o.tracking_number ? <TrackingCopy value={o.tracking_number} /> : <span className="text-white/100 text-xs">—</span>}
                 </div>
                 <div className="flex items-center gap-2 justify-end sm:justify-start">
                   <StatusBadge status={status} />

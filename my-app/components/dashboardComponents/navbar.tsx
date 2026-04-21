@@ -41,7 +41,7 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
         className={
           active
             ? "text-[#e8629a]"
-            : "text-white/20 group-hover:text-white/40 transition-colors"
+            : "text-white/100 group-hover:text-white/100 transition-colors"
         }
       />
 
@@ -57,8 +57,8 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
 
   const className = `w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150 border-b border-white/[0.04] group relative ${
     active
-      ? "bg-white/[0.03] text-white/75"
-      : "text-white/25 hover:text-white/50 hover:bg-white/[0.02]"
+      ? "bg-white/[0.03] text-white/100"
+      : "text-white/100 hover:text-white/100 hover:bg-white/[0.02]"
   }`;
 
   if (href) {
@@ -194,7 +194,7 @@ export default function Navbar({
         {/* Logo row */}
         <div className="px-5 py-5 flex items-center justify-between border-b border-white/[0.125]">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/100 mb-1">
               FBX Technologies
             </p>
             <span className="text-white font-bold tracking-wide text-base">
@@ -203,7 +203,7 @@ export default function Navbar({
           </div>
           <button
             onClick={toggleSidebar}
-            className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center text-white/100 hover:text-white/100 transition-colors flex-shrink-0"
           >
             <X size={16} />
           </button>
@@ -211,7 +211,7 @@ export default function Navbar({
 
         {/* Nav section label */}
         <div className="px-5 pt-5 pb-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/100">
             Menu
           </p>
         </div>
@@ -239,14 +239,14 @@ export default function Navbar({
             <span className="text-sm font-bold text-white truncate">
               {isAdmin ? "Admin" : (clientName ?? "Client")}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50 truncate">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 truncate">
               {dashboardLabel}
             </span>
           </div>
           <button
             onClick={handleLogout}
             title="Log out"
-            className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-[#c975b9] transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center text-white/100 hover:text-[#c975b9] transition-colors flex-shrink-0"
           >
             <LogOut size={15} />
           </button>
@@ -266,7 +266,7 @@ export default function Navbar({
           {!sidebarOpen && (
             <button
               onClick={toggleSidebar}
-              className="w-8 h-8 flex items-center justify-center text-white/20 hover:text-white/50 transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-white/100 hover:text-white/100 transition-colors"
             >
               <Menu size={16} />
             </button>

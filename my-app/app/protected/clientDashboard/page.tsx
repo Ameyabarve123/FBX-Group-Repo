@@ -171,7 +171,7 @@ export default function ClientDashboard() {
         <div className="flex items-center gap-4">
           <img src="/fbx_logo.png" alt="FBX Logo" className="max-h-[7vh] max-w-full" />
           <div>
-            <h1 className="text-white/100 text-2xl font-bold tracking-wide">Client Dashboard</h1>
+            <h1 className="text-white/100 text-2xl font-bold tracking-wide">Enterprise Dashboard</h1>
           </div>
         </div>
         <p className="text-white/100 text-sm font-light tracking-wide">
