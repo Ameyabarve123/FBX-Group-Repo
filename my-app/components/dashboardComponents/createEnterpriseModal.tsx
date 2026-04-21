@@ -17,11 +17,13 @@ function generatePassword(length = 12): string {
 }
 
 export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnterpriseModalProps) {
-  const [name,       setName]       = useState("");
-  const [email,      setEmail]      = useState("");
-  const [password,   setPassword]   = useState(generatePassword());
-  const [submitting, setSubmitting] = useState(false);
-  const [err,        setErr]        = useState<string | null>(null);
+  const [name,                  setName]                 = useState("");
+  const [email,                 setEmail]                = useState("");
+  const [password,              setPassword]             = useState(generatePassword());
+  const [robotsAllocated,       setRobotsAllocated]      = useState("");
+  const [curriculumsAllocated,  setCurriculumsAllocated] = useState("");
+  const [submitting,            setSubmitting]           = useState(false);
+  const [err,                   setErr]                  = useState<string | null>(null);
 
   async function handleCreate() {
     if (!name || !email || !password) return;
@@ -40,7 +42,13 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          robots_allocated:      robotsAllocated      ? Number(robotsAllocated)      : null,
+          curriculums_allocated: curriculumsAllocated ? Number(curriculumsAllocated) : null,
+        }),
       });
 
       if (!res.ok) {
@@ -99,6 +107,35 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
               />
             </div>
           ))}
+
+          {/* Allocations */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Allocations</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 mb-1">Robots</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={robotsAllocated}
+                  onChange={(e) => setRobotsAllocated(e.target.value)}
+                  placeholder="0"
+                  className={fieldClass}
+                />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/40 mb-1">Curriculums</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={curriculumsAllocated}
+                  onChange={(e) => setCurriculumsAllocated(e.target.value)}
+                  placeholder="0"
+                  className={fieldClass}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <p className="text-white/50 text-[11px]">

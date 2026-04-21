@@ -18,10 +18,11 @@ export default function EnterprisesPage() {
   const supabase = createClient();
   const router   = useRouter();
 
-  const [dbUsers,   setDbUsers]   = useState<DBUser[]>([]);
-  const [dbPlans,   setDbPlans]   = useState<DBPlan[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
+  const [dbUsers,        setDbUsers]        = useState<DBUser[]>([]);
+  const [dbPlans,        setDbPlans]        = useState<DBPlan[]>([]);
+  const [studentCounts,  setStudentCounts]  = useState<Record<string, number>>({});
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState<string | null>(null);
 
   const [selectedEnterprise,   setSelectedEnterprise]   = useState<DBUser | null>(null);
   const [createEnterpriseOpen, setCreateEnterpriseOpen] = useState(false);
@@ -31,6 +32,27 @@ export default function EnterprisesPage() {
 
   function getPlanForUser(userUuid: string): DBPlan | undefined {
     return dbPlans.find((p) => p.user_uuid === userUuid);
+  }
+
+  async function fetchStudentCounts(users: DBUser[]) {
+    const enterpriseUsers = users.filter((u) => u.role === 3);
+    if (enterpriseUsers.length === 0) return;
+
+    const counts: Record<string, number> = {};
+
+    await Promise.all(
+      enterpriseUsers.map(async (u) => {
+        const { count, error } = await supabase
+          .from("enterprise_students")
+          .select("*", { count: "exact", head: true })
+          .eq("enterprise_uuid", u.user_uuid);
+        console.log(`enterprise ${u.client_name} (${u.user_uuid}): count=${count}, error=${error?.message}`);
+        counts[u.user_uuid] = count ?? 0;
+      })
+    );
+
+    console.log("final counts:", counts);
+    setStudentCounts(counts);
   }
 
   useEffect(() => {
@@ -53,8 +75,10 @@ export default function EnterprisesPage() {
         ]);
         if (usersRes.error) throw new Error(usersRes.error.message);
         if (plansRes.error) throw new Error(plansRes.error.message);
-        setDbUsers(usersRes.data ?? []);
+        const users = usersRes.data ?? [];
+        setDbUsers(users);
         setDbPlans(plansRes.data ?? []);
+        await fetchStudentCounts(users);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load data");
       } finally {
@@ -91,8 +115,10 @@ export default function EnterprisesPage() {
       supabase.from("users").select("*"),
       supabase.from("plans").select("*"),
     ]);
-    if (!usersRes.error) setDbUsers(usersRes.data ?? []);
+    const users = usersRes.data ?? [];
+    if (!usersRes.error) setDbUsers(users);
     if (!plansRes.error) setDbPlans(plansRes.data ?? []);
+    await fetchStudentCounts(users);
   }
 
   if (error) {
@@ -113,6 +139,7 @@ export default function EnterprisesPage() {
         <EnterprisePlanModal
           enterprise={selectedEnterprise}
           plan={getPlanForUser(selectedEnterprise.user_uuid)}
+          studentCount={studentCounts[selectedEnterprise.user_uuid] ?? 0}
           onClose={() => setSelectedEnterprise(null)}
           onSave={handleSavePlan}
         />
@@ -154,22 +181,24 @@ export default function EnterprisesPage() {
           </button>
         </div>
 
-        <TableHeader cols={["Profile", "Company", "Price", "Robots"]} />
+        <TableHeader cols={["Profile", "Company", "Price", "Robots", "Students"]} />
 
         {loading
           ? [1, 2, 3].map((i) => <LoadingRow key={i} />)
           : enterprises.length === 0
           ? <EmptyRow message="No enterprise accounts" />
           : enterprises.map((u) => {
-              const plan    = getPlanForUser(u.user_uuid);
-              const shipped = plan?.robots_shipped   ?? 0;
-              const total   = plan?.robots_allocated ?? 0;
-              const pct     = total > 0 ? Math.min(100, Math.round((shipped / total) * 100)) : 0;
+              const plan         = getPlanForUser(u.user_uuid);
+              const shipped      = plan?.robots_shipped       ?? 0;
+              const total        = plan?.robots_allocated     ?? 0;
+              const curriculums  = plan?.curriculums_allocated ?? 0;
+              const students     = studentCounts[u.user_uuid] ?? 0;
+              const pct          = total > 0 ? Math.min(100, Math.round((shipped / total) * 100)) : 0;
               return (
                 <div
                   key={u.id}
                   onClick={() => setSelectedEnterprise(u)}
-                  className="px-5 py-4 grid sm:grid-cols-4 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                  className="px-5 py-4 grid sm:grid-cols-5 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
                 >
                   <Avatar initials={getInitials(u.client_name)} color="teal" />
                   <span className="text-white/60 text-sm truncate">{u.client_name}</span>
@@ -187,6 +216,15 @@ export default function EnterprisesPage() {
                     ) : (
                       <span className="text-sm text-white/50">—</span>
                     )}
+                  </div>
+                  {/* Students column */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-white/70 tabular-nums">
+                      {students > 0
+                        ? <><span className="text-[#c975b9]">{students}</span>{curriculums > 0 && <span className="text-white/20"> /{curriculums}</span>}</>
+                        : <span className="text-white/50">—</span>
+                      }
+                    </span>
                     <ExternalLink size={11} className="text-[#629fcc] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>

@@ -168,6 +168,9 @@ export default function Navbar({
           {isAdmin ? (
             <>
               <NavItem icon={LayoutDashboard} label="Dashboard" active={activePage === "dashboard"} href="/protected" onClick={closeSidebar} />
+              <NavItem icon={Users} label="Enterprises" active={activePage === "enterprises"} href="/protected/adminDashboard/enterprises" onClick={closeSidebar} />
+              <NavItem icon={ShoppingCart} label="Orders" active={activePage === "orders"} href="/protected/adminDashboard/orders" onClick={closeSidebar} />
+              <NavItem icon={TicketCheck} label="Tickets" active={activePage === "tickets"} href="/protected/adminDashboard/tickets" onClick={closeSidebar} />
               <NavItem icon={User} label="Profile" active={activePage === "profile"} href="/protected/profile" onClick={closeSidebar} />
             </>
           ) : (
