@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Bot, DollarSign, PackageCheck, Pencil, X, Save } from "lucide-react";
+import { Building2, Bot, BookOpen, Users, DollarSign, PackageCheck, Pencil, X, Save } from "lucide-react";
 import type { DBUser, DBPlan } from "./types";
 
 interface EnterprisePlanModalProps {
   enterprise: DBUser;
   plan: DBPlan | undefined;
+  studentCount: number;
   onClose: () => void;
   onSave: (updated: Partial<DBPlan>) => Promise<void>;
 }
@@ -14,27 +15,32 @@ interface EnterprisePlanModalProps {
 export default function EnterprisePlanModal({
   enterprise,
   plan,
+  studentCount,
   onClose,
   onSave,
 }: EnterprisePlanModalProps) {
-  const [editing,       setEditing]       = useState(false);
-  const [description,   setDescription]   = useState(plan?.description        ?? "");
-  const [price,         setPrice]         = useState(String(plan?.price       ?? ""));
-  const [robotsTotal,   setRobotsTotal]   = useState(String(plan?.robots_allocated ?? 0));
-  const [robotsShipped, setRobotsShipped] = useState(String(plan?.robots_shipped   ?? 0));
-  const [saving,        setSaving]        = useState(false);
+  const [editing,              setEditing]              = useState(false);
+  const [description,          setDescription]          = useState(plan?.description           ?? "");
+  const [price,                setPrice]                = useState(String(plan?.price          ?? ""));
+  const [robotsTotal,          setRobotsTotal]          = useState(String(plan?.robots_allocated      ?? 0));
+  const [robotsShipped,        setRobotsShipped]        = useState(String(plan?.robots_shipped         ?? 0));
+  const [curriculumsAllocated, setCurriculumsAllocated] = useState(String(plan?.curriculums_allocated  ?? 0));
+  const [saving,               setSaving]               = useState(false);
 
-  const shipped = parseInt(robotsShipped, 10) || 0;
-  const total   = parseInt(robotsTotal,   10) || 0;
-  const pct     = total > 0 ? Math.min(100, Math.round((shipped / total) * 100)) : 0;
+  const shipped      = parseInt(robotsShipped,        10) || 0;
+  const total        = parseInt(robotsTotal,          10) || 0;
+  const curriculums  = plan?.curriculums_allocated ?? 0;
+  const pct          = total > 0 ? Math.min(100, Math.round((shipped / total) * 100)) : 0;
+  const studentPct   = curriculums > 0 ? Math.min(100, Math.round((studentCount / curriculums) * 100)) : 0;
 
   async function handleSave() {
     setSaving(true);
     await onSave({
       description,
-      price:            parseFloat(price),
-      robots_allocated: parseInt(robotsTotal,   10),
-      robots_shipped:   parseInt(robotsShipped, 10),
+      price:                 parseFloat(price),
+      robots_allocated:      parseInt(robotsTotal,          10),
+      robots_shipped:        parseInt(robotsShipped,        10),
+      curriculums_allocated: parseInt(curriculumsAllocated, 10),
     });
     setSaving(false);
     setEditing(false);
@@ -83,7 +89,7 @@ export default function EnterprisePlanModal({
           {/* Body */}
           <div className="px-10 py-9 space-y-8">
             {editing ? (
-              /* ── Edit mode ── */
+              /* Edit mode */
               <div className="space-y-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Description</p>
@@ -91,45 +97,32 @@ export default function EnterprisePlanModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    className={`${fieldClass} resize-none`}
+                    className={fieldClass + " resize-none"}
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Price (USD)</p>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      className={fieldClass}
-                    />
+                    <input type="number" min={0} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className={fieldClass} />
                   </div>
                   <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Curriculums Allocated</p>
+                    <input type="number" min={0} value={curriculumsAllocated} onChange={(e) => setCurriculumsAllocated(e.target.value)} className={fieldClass} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Robots Allocated</p>
-                    <input
-                      type="number"
-                      min={0}
-                      value={robotsTotal}
-                      onChange={(e) => setRobotsTotal(e.target.value)}
-                      className={fieldClass}
-                    />
+                    <input type="number" min={0} value={robotsTotal} onChange={(e) => setRobotsTotal(e.target.value)} className={fieldClass} />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Robots Shipped</p>
-                    <input
-                      type="number"
-                      min={0}
-                      value={robotsShipped}
-                      onChange={(e) => setRobotsShipped(e.target.value)}
-                      className={fieldClass}
-                    />
+                    <input type="number" min={0} value={robotsShipped} onChange={(e) => setRobotsShipped(e.target.value)} className={fieldClass} />
                   </div>
                 </div>
               </div>
             ) : plan ? (
-              /* ── Read mode ── */
+              /* Read mode */
               <>
                 {/* Description */}
                 <div>
@@ -148,18 +141,45 @@ export default function EnterprisePlanModal({
                     <DollarSign size={15} className="text-[#c975b9]" />
                     <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Price</p>
                   </div>
-                  <p className="text-white/70 text-lg font-bold pl-7">
-                    ${plan.price.toLocaleString()}
-                  </p>
+                  <p className="text-white/70 text-lg font-bold pl-7">${plan.price.toLocaleString()}</p>
+                </div>
+
+                {/* Curriculum access */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <BookOpen size={15} className="text-[#c975b9]" />
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Curriculum Access</p>
+                  </div>
+                  <div className="pl-7 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/40">Students with access</span>
+                      <span className="text-white/70 tabular-nums">
+                        <span className="text-[#c975b9]">{studentCount}</span>
+                        {curriculums > 0 && <><span className="text-white/20 mx-1">/</span><span>{curriculums}</span></>}
+                      </span>
+                    </div>
+                    {curriculums > 0 && (
+                      <>
+                        <div className="h-1.5 rounded-full bg-white/[0.06] w-full overflow-hidden">
+                          <div className="h-full rounded-full bg-[#c975b9] transition-all duration-500" style={{ width: `${studentPct}%` }} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Users size={11} className="text-[#c975b9]" />
+                            <span className="text-[11px] text-white/50 tracking-wider">{studentPct}% seats used</span>
+                          </div>
+                          <span className="text-[11px] text-white/50">{curriculums - studentCount} remaining</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Robot deployment */}
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <Bot size={15} className="text-[#91bee3]" />
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">
-                      Robot Deployment
-                    </p>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Robot Deployment</p>
                   </div>
                   <div className="pl-7 space-y-3">
                     <div className="flex items-center justify-between text-sm">
@@ -171,19 +191,14 @@ export default function EnterprisePlanModal({
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/[0.06] w-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#629fcc] transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className="h-full rounded-full bg-[#629fcc] transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <PackageCheck size={11} className="text-[#629fcc]" />
                         <span className="text-[11px] text-white/50 tracking-wider">{pct}% deployed</span>
                       </div>
-                      <span className="text-[11px] text-white/50">
-                        {(plan.robots_allocated ?? 0) - (plan.robots_shipped ?? 0)} remaining
-                      </span>
+                      <span className="text-[11px] text-white/50">{(plan.robots_allocated ?? 0) - (plan.robots_shipped ?? 0)} remaining</span>
                     </div>
                   </div>
                 </div>
@@ -191,12 +206,7 @@ export default function EnterprisePlanModal({
             ) : (
               <p className="text-white/50 text-sm">
                 No plan assigned yet.{" "}
-                <button
-                  onClick={() => setEditing(true)}
-                  className="text-[#629fcc] underline underline-offset-2"
-                >
-                  Add one
-                </button>
+                <button onClick={() => setEditing(true)} className="text-[#629fcc] underline underline-offset-2">Add one</button>
               </p>
             )}
           </div>
@@ -205,26 +215,16 @@ export default function EnterprisePlanModal({
           <div className="px-10 pb-10 border-t border-white/[0.125] pt-6 flex gap-3">
             {editing ? (
               <>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="flex-1 py-3 rounded-lg text-white/80 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/50 border border-white/[0.08] hover:border-white/[0.14] transition"
-                >
+                <button onClick={() => setEditing(false)} className="flex-1 py-3 rounded-lg text-white/80 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/50 border border-white/[0.08] hover:border-white/[0.14] transition">
                   Cancel
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 py-3 rounded-lg flex items-center justify-center gap-2 bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition disabled:opacity-40"
-                >
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-lg flex items-center justify-center gap-2 bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition disabled:opacity-40">
                   <Save size={12} />
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
               </>
             ) : (
-              <button
-                onClick={onClose}
-                className="w-full py-4 rounded-lg text-white/80 text-sm font-bold uppercase tracking-[0.2em] hover:text-white/50 hover:bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-150"
-              >
+              <button onClick={onClose} className="w-full py-4 rounded-lg text-white/80 text-sm font-bold uppercase tracking-[0.2em] hover:text-white/50 hover:bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-150">
                 Close
               </button>
             )}
