@@ -1087,7 +1087,7 @@ export function ProfileView({
                   Account Type:
                 </span>
                 <span>
-                  {dbUser?.role ?? 0}
+                  {roleMap[dbUser?.role ?? 0]}
                 </span>
               </div>
             </div>
