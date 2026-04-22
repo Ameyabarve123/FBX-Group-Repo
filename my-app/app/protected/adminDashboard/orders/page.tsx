@@ -76,12 +76,12 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
     <div className="border-b border-white/[0.125] bg-[#0a0820]">
       <div className="px-5 py-3 flex items-center justify-between border-b border-white/[0.04]">
         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#91bee3]">New Order</span>
-        <button onClick={onCancel} className="text-white/80 hover:text-white/50 transition"><X size={14} /></button>
+        <button onClick={onCancel} className="text-white/100 hover:text-white/100 transition"><X size={14} /></button>
       </div>
       <div className="px-5 py-5 space-y-4">
         {/* Enterprise dropdown */}
         <div ref={dropdownRef} className="relative">
-          <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">Enterprise</label>
+          <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 mb-1.5">Enterprise</label>
           <button
             type="button"
             onClick={() => setDropdownOpen((v) => !v)}
@@ -92,17 +92,17 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
                 <div className="w-5 h-5 rounded bg-[#629fcc]/10 flex items-center justify-center text-[9px] font-bold text-[#629fcc]">
                   {getInitials(selectedEnterprise.client_name)}
                 </div>
-                <span className="text-white/70 text-sm">{selectedEnterprise.client_name}</span>
+                <span className="text-white/100 text-sm">{selectedEnterprise.client_name}</span>
               </div>
             ) : (
-              <span className="text-white/80 text-sm">Select enterprise…</span>
+              <span className="text-white/100 text-sm">Select enterprise…</span>
             )}
-            <ChevronDown size={13} className={`text-white/80 flex-shrink-0 transition-transform duration-150 ${dropdownOpen ? "rotate-180" : ""}`} />
+            <ChevronDown size={13} className={`text-white/100 flex-shrink-0 transition-transform duration-150 ${dropdownOpen ? "rotate-180" : ""}`} />
           </button>
           {dropdownOpen && (
             <div className="absolute z-20 top-full left-0 right-0 mt-1 rounded-lg bg-[#100d24] border border-white/[0.10] shadow-xl max-h-48 overflow-y-auto">
               {enterprises.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-white/80 tracking-widest uppercase">No enterprises</div>
+                <div className="px-4 py-3 text-xs text-white/100 tracking-widest uppercase">No enterprises</div>
               ) : (
                 enterprises.map((e) => (
                   <button
@@ -114,7 +114,7 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
                     <div className="w-6 h-6 rounded bg-[#629fcc]/10 flex items-center justify-center text-[9px] font-bold text-[#629fcc] flex-shrink-0">
                       {getInitials(e.client_name)}
                     </div>
-                    <span className={`text-sm ${selectedUuid === e.user_uuid ? "text-[#629fcc]" : "text-white/55"}`}>{e.client_name}</span>
+                    <span className={`text-sm ${selectedUuid === e.user_uuid ? "text-[#629fcc]" : "text-white/100"}`}>{e.client_name}</span>
                   </button>
                 ))
               )}
@@ -131,14 +131,14 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
             { label: <>Description</>, value: description, set: setDescription, placeholder: "Optional notes…", mono: false },
           ].map(({ label, value, set, placeholder, mono }, i) => (
             <div key={i}>
-              <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 mb-1.5">
                 <span className="flex items-center gap-1.5">{label}</span>
               </label>
               <input
                 value={value}
                 onChange={(e) => set(e.target.value)}
                 placeholder={placeholder}
-                className={`w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#91bee3]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/50 transition ${mono ? "font-mono placeholder:font-sans" : ""}`}
+                className={`w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#91bee3]/40 focus:outline-none text-white/100 text-sm placeholder:text-white/100 transition ${mono ? "font-mono placeholder:font-sans" : ""}`}
               />
             </div>
           ))}
@@ -154,7 +154,7 @@ function AddOrderPanel({ enterprises, onAdd, onCancel }: AddOrderPanelProps) {
           >
             {saving ? "Saving…" : <><Plus size={11} />Add Order</>}
           </button>
-          <button onClick={onCancel} className="px-4 py-2 text-white/80 text-[10px] font-bold uppercase tracking-[0.18em] hover:text-white/50 transition">
+          <button onClick={onCancel} className="px-4 py-2 text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] hover:text-white/100 transition">
             Cancel
           </button>
         </div>
@@ -224,7 +224,7 @@ export default function OrdersPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
           <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -249,12 +249,12 @@ export default function OrdersPage() {
       <div className="pb-4 border-b border-white/[0.125]">
         <button
           onClick={() => router.push("/protected/adminDashboard")}
-          className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
+          className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
         >
           <ArrowLeft size={11} />Back
         </button>
-        <p className="text-xs uppercase tracking-[0.22em] text-white/80 mb-1">FBX Technologies</p>
-        <h1 className="text-white/75 text-2xl font-bold tracking-wide">Orders in Progress</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-white/100 mb-1">FBX Technologies</p>
+        <h1 className="text-white/100 text-2xl font-bold tracking-wide">Orders in Progress</h1>
       </div>
 
       <SectionCard title="Orders in Progress" icon={ShoppingCart} count={dbOrders.length} accent="slate">
@@ -291,9 +291,9 @@ export default function OrdersPage() {
                   className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
                 >
                   <Avatar initials={getInitials(owner?.client_name ?? "?")} color="slate" />
-                  <span className="text-white/60 text-sm truncate">{o.order_title}</span>
+                  <span className="text-white/100 text-sm truncate">{o.order_title}</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-white/70">{o.price}</span>
+                    <span className="text-sm text-white/100">{o.price}</span>
                     <ExternalLink size={11} className="text-[#91bee3] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>

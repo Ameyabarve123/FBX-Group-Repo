@@ -59,9 +59,9 @@ function emptyInvoiceForm(): InvoiceFormState {
 }
 
 const invFieldClass =
-  "w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#c975b9]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/25 transition";
+  "w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#FF6996]/40 focus:outline-none text-white/100 text-sm placeholder:text-white/100 transition";
 const invLabelClass =
-  "block text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5";
+  "block text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 mb-1.5";
 
 // ── Nav tiles ──────────────────────────────────────────────────────────────
 
@@ -89,7 +89,7 @@ function NavTile({
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-white/55 text-xs font-bold uppercase tracking-[0.18em]">{label}</span>
+        <span className="text-white/100 text-xs font-bold uppercase tracking-[0.18em]">{label}</span>
         <ArrowRight size={13} className={`${accent.text} opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0 duration-200`} />
       </div>
     </button>
@@ -285,8 +285,8 @@ export default function AdminHomepage() {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
-          <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -315,7 +315,7 @@ export default function AdminHomepage() {
       <div className="pb-4 border-b border-white/[0.125] flex items-center gap-4">
       <img src="/fbx_logo.png" alt="Hero Image" className="max-h-[7vh] max-w-full" />
       <div>
-        <h1 className="text-white/75 text-2xl font-bold tracking-wide">Admin Dashboard</h1>
+        <h1 className="text-white/100 text-2xl font-bold tracking-wide">Admin Dashboard</h1>
       </div>
     </div>
 
@@ -326,21 +326,21 @@ export default function AdminHomepage() {
           icon={Building2}
           label="Enterprise Accounts"
           count={loading ? 0 : enterprises.length}
-          accent={{ text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" }}
+          accent={{ text: "text-[#8AC7F4]", bg: "bg-[#8AC7F4]/10", border: "border-[#8AC7F4]/20" }}
         />
         <NavTile
           href="/protected/adminDashboard/tickets"
           icon={TicketCheck}
           label="Support Tickets"
           count={loading ? 0 : dbTickets.length}
-          accent={{ text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" }}
+          accent={{ text: "text-[#FF6996]", bg: "bg-[#FF6996]/10", border: "border-[#FF6996]/20" }}
         />
         <NavTile
           href="/protected/adminDashboard/orders"
           icon={ShoppingCart}
           label="Orders in Progress"
           count={loading ? 0 : dbOrders.length}
-          accent={{ text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" }}
+          accent={{ text: "text-[#D6BDF2]", bg: "bg-[#D6BDF2]/10", border: "border-[#D6BDF2]/20" }}
         />
       </div>
 
@@ -352,7 +352,7 @@ export default function AdminHomepage() {
             type="button"
             onClick={() => { setInvoiceMenuOpen((v) => { if (!v) setInvoiceForm(emptyInvoiceForm()); return !v; }); }}
             disabled={loading}
-            className="flex h-full min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-lg border border-[#c975b9]/25 bg-[#c975b9]/10 px-3 py-3 text-[#c975b9] hover:bg-[#c975b9]/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-full min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-lg border border-[#FF6996]/25 bg-[#FF6996]/10 px-3 py-3 text-[#FF6996] hover:bg-[#FF6996]/15 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus size={20} strokeWidth={2.25} />
             <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-[0.2em] leading-none">
@@ -364,13 +364,13 @@ export default function AdminHomepage() {
           {invoiceMenuOpen && (
             <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(100vw-1.5rem,26rem)] max-h-[min(85vh,36rem)] overflow-y-auto rounded-xl border border-white/[0.12] bg-[#0a0820] shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
               <div className="sticky top-0 z-[1] flex items-center justify-between border-b border-white/[0.08] bg-[#0a0820]/95 px-4 py-3 backdrop-blur-sm">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c975b9]">New invoice</span>
-                <button type="button" onClick={() => setInvoiceMenuOpen(false)} className="text-white/50 hover:text-white/80 transition"><X size={16} /></button>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6996]">New invoice</span>
+                <button type="button" onClick={() => setInvoiceMenuOpen(false)} className="text-white/100 hover:text-white/100 transition"><X size={16} /></button>
               </div>
               <div className="space-y-5 p-4">
                 {/* Client */}
                 <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Client</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100">Client</p>
                   <div>
                     <label className={invLabelClass}>Enterprise preset</label>
                     <select
@@ -404,7 +404,7 @@ export default function AdminHomepage() {
 
                 {/* Invoice details */}
                 <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Invoice details</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100">Invoice details</p>
                   <div>
                     <label className={invLabelClass}>Invoice #</label>
                     <input value={invoiceForm.invoiceNumber} onChange={(e) => setInvoiceForm((p) => ({ ...p, invoiceNumber: e.target.value }))} className={invFieldClass} placeholder="Leave blank to auto-generate" />
@@ -417,7 +417,7 @@ export default function AdminHomepage() {
                     <div>
                       <label className={invLabelClass}>Due date</label>
                       <input type="date" value={invoiceForm.dueDate} onChange={(e) => setInvoiceForm((p) => ({ ...p, dueDate: e.target.value }))} className={invFieldClass} />
-                      <p className="mt-1 text-[10px] text-white/30">If empty, PDF uses one month from today.</p>
+                      <p className="mt-1 text-[10px] text-white/100">If empty, PDF uses one month from today.</p>
                     </div>
                   </div>
                   <div>
@@ -433,8 +433,8 @@ export default function AdminHomepage() {
                 {/* Items */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Items</p>
-                    <button type="button" onClick={addInvoiceLine} className="flex items-center gap-1 rounded-md border border-[#c975b9]/25 bg-[#c975b9]/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#c975b9] hover:bg-[#c975b9]/15 transition">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100">Items</p>
+                    <button type="button" onClick={addInvoiceLine} className="flex items-center gap-1 rounded-md border border-[#FF6996]/25 bg-[#FF6996]/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#FF6996] hover:bg-[#FF6996]/15 transition">
                       <Plus size={11} />Add item
                     </button>
                   </div>
@@ -442,9 +442,9 @@ export default function AdminHomepage() {
                     {invoiceForm.lines.map((line, idx) => (
                       <div key={line.id} className="space-y-2 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">Item {idx + 1}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-white/100">Item {idx + 1}</span>
                           {invoiceForm.lines.length > 1 && (
-                            <button type="button" onClick={() => removeInvoiceLine(line.id)} className="text-white/25 hover:text-[#c975b9] transition"><Trash2 size={14} /></button>
+                            <button type="button" onClick={() => removeInvoiceLine(line.id)} className="text-white/100 hover:text-[#FF6996] transition"><Trash2 size={14} /></button>
                           )}
                         </div>
                         <div>
@@ -470,13 +470,13 @@ export default function AdminHomepage() {
                   </div>
                 </div>
 
-                {invoiceErr && <p className="text-[#c975b9] text-xs tracking-wide">{invoiceErr}</p>}
+                {invoiceErr && <p className="text-[#FF6996] text-xs tracking-wide">{invoiceErr}</p>}
 
                 <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
-                  <button type="button" onClick={handleInvoiceSubmit} disabled={invoiceBusy} className="flex items-center gap-2 rounded-lg border border-[#c975b9]/30 bg-[#c975b9]/15 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c975b9] hover:bg-[#c975b9]/25 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  <button type="button" onClick={handleInvoiceSubmit} disabled={invoiceBusy} className="flex items-center gap-2 rounded-lg border border-[#FF6996]/30 bg-[#FF6996]/15 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#FF6996] hover:bg-[#FF6996]/25 transition disabled:opacity-40 disabled:cursor-not-allowed">
                     <Plus size={12} />{invoiceBusy ? "Generating…" : "Generate PDF"}
                   </button>
-                  <button type="button" onClick={() => setInvoiceMenuOpen(false)} disabled={invoiceBusy} className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40 hover:text-white/60 transition disabled:opacity-40">
+                  <button type="button" onClick={() => setInvoiceMenuOpen(false)} disabled={invoiceBusy} className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 hover:text-white/100 transition disabled:opacity-40">
                     Cancel
                   </button>
                 </div>
@@ -490,7 +490,7 @@ export default function AdminHomepage() {
       <div className="pt-2">
         <button
           onClick={() => setCreateEnterpriseOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8AC7F4]/10 border border-[#8AC7F4]/20 text-[#8AC7F4] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#8AC7F4]/15 transition"
         >
           <Plus size={12} />New Enterprise
         </button>

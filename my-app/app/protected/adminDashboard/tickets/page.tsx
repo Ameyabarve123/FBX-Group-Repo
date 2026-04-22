@@ -60,8 +60,8 @@ export default function TicketsPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
-          <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -87,12 +87,12 @@ export default function TicketsPage() {
       <div className="pb-4 border-b border-white/[0.125]">
         <button
           onClick={() => router.push("/protected/adminDashboard")}
-          className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
+          className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
         >
           <ArrowLeft size={11} />Back
         </button>
-        <p className="text-xs uppercase tracking-[0.22em] text-white/80 mb-1">FBX Technologies</p>
-        <h1 className="text-white/75 text-2xl font-bold tracking-wide">Support Tickets</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-white/100 mb-1">FBX Technologies</p>
+        <h1 className="text-white/100 text-2xl font-bold tracking-wide">Support Tickets</h1>
       </div>
 
       <SectionCard title="Support Tickets" icon={TicketCheck} count={dbTickets.length} accent="pink">
@@ -108,10 +108,10 @@ export default function TicketsPage() {
                 className="px-5 py-4 grid sm:grid-cols-3 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
               >
                 <Avatar initials={getInitials(t.client_name)} color="pink" />
-                <span className="text-white/60 text-sm truncate">{t.client_name}</span>
+                <span className="text-white/100 text-sm truncate">{t.client_name}</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm text-white/70 truncate hidden sm:block">{t.title}</span>
-                  <ExternalLink size={11} className="text-[#c975b9] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-sm text-white/100 truncate hidden sm:block">{t.title}</span>
+                  <ExternalLink size={11} className="text-[#FF6996] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             ))}

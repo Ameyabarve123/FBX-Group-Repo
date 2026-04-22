@@ -20,10 +20,10 @@ export const PAGE_BG: React.CSSProperties = {
 
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
 const ACCENTS = {
-  pink:   { text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" },
-  blue:   { text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" },
-  slate:  { text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" },
-  teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10", border: "border-[#4ecdc4]/20" },
+  pink:   { text: "text-[#FF6996]", bg: "bg-[#FF6996]/10", border: "border-[#FF6996]/20" },
+  blue:   { text: "text-[#8AC7F4]", bg: "bg-[#8AC7F4]/10", border: "border-[#8AC7F4]/20" },
+  slate:  { text: "text-[#D6BDF2]", bg: "bg-[#D6BDF2]/10", border: "border-[#D6BDF2]/20" },
+  teal:   { text: "text-[#7DE9E2]", bg: "bg-[#7DE9E2]/10", border: "border-[#7DE9E2]/20" },
 };
 type AccentKey = keyof typeof ACCENTS;
 
@@ -152,7 +152,7 @@ export default function ClientDashboard() {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
-          <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
+          <p className="text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
           <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
@@ -246,19 +246,19 @@ export default function ClientDashboard() {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/protected/clientDashboard/teachers?action=createTeacher")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#4ecdc4]/15 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7DE9E2]/10 border border-[#7DE9E2]/20 text-[#7DE9E2] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#7DE9E2]/15 transition"
           >
             <UserPlus size={12} />Create Teacher
           </button>
           <button
             onClick={() => router.push("/protected/clientDashboard/tickets?action=new")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#c975b9]/10 border border-[#c975b9]/25 text-[#c975b9] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#c975b9]/15 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF6996]/10 border border-[#FF6996]/25 text-[#FF6996] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#FF6996]/15 transition"
           >
             <TicketCheck size={12} />Open Ticket
           </button>
           <button
             onClick={() => router.push("/protected/clientDashboard/teachers")}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#91bee3]/10 border border-[#91bee3]/20 text-[#91bee3] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#91bee3]/15 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#D6BDF2]/10 border border-[#D6BDF2]/20 text-[#D6BDF2] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#D6BDF2]/15 transition"
           >
             <GraduationCap size={12} />Manage Students
           </button>

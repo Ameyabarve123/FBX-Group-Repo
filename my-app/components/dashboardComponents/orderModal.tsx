@@ -76,10 +76,10 @@ function StatusBadge({ status }: { status: string }) {
     OD: { label: "Out for Delivery",   color: "text-[#f59e42] bg-[#f59e42]/10 border-[#f59e42]/20" },
     IT: { label: "In Transit",         color: "text-[#91bee3] bg-[#91bee3]/10 border-[#91bee3]/20" },
     PU: { label: "Picked Up",          color: "text-[#629fcc] bg-[#629fcc]/10 border-[#629fcc]/20" },
-    DE: { label: "Delivery Exception", color: "text-[#c975b9] bg-[#c975b9]/10 border-[#c975b9]/20" },
-    OC: { label: "Label Created",      color: "text-white/40 bg-white/5 border-white/10" },
+    DE: { label: "Delivery Exception", color: "text-[#FF6996] bg-[#FF6996]/10 border-[#FF6996]/20" },
+    OC: { label: "Label Created",      color: "text-white/100 bg-white/100 border-white/100" },
   };
-  const cfg = map[status.toUpperCase()] ?? { label: status, color: "text-white/40 bg-white/5 border-white/10" };
+  const cfg = map[status.toUpperCase()] ?? { label: status, color: "text-white/100 bg-white/100 border-white/100" };
   return (
     <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded border font-bold ${cfg.color}`}>
       {cfg.label}
@@ -97,7 +97,7 @@ function CopyButton({ text }: { text: string }) {
       tabIndex={0}
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
       onKeyDown={(e) => e.key === "Enter" && navigator.clipboard.writeText(text)}
-      className="text-white/20 hover:text-[#91bee3] transition-colors cursor-pointer"
+      className="text-white/100 hover:text-[#91bee3] transition-colors cursor-pointer"
       title="Copy tracking number"
     >
       {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
@@ -145,17 +145,17 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
           {/* ── Header ── */}
           <div className="px-10 py-8 border-b border-white/[0.125] flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/50 mb-2">
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/100 mb-2">
                 Order Details
               </p>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-white/75 text-3xl font-bold tracking-wide">{order.title}</h2>
+                <h2 className="text-white/100 text-3xl font-bold tracking-wide">{order.title}</h2>
                 {trackingInfo && <StatusBadge status={trackingInfo.status} />}
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center text-white/80 hover:text-white/50 transition mt-1 flex-shrink-0"
+              className="w-10 h-10 flex items-center justify-center text-white/100 hover:text-white/100 transition mt-1 flex-shrink-0"
             >
               <X size={20} />
             </button>
@@ -171,30 +171,30 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <FileText size={15} className="text-[#91bee3]" />
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Description</p>
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Description</p>
                 </div>
-                <p className="text-white/50 text-base leading-relaxed pl-7">
-                  {order.description || <span className="text-white/20 italic">No description</span>}
+                <p className="text-white/100 text-base leading-relaxed pl-7">
+                  {order.description || <span className="text-white/100 italic">No description</span>}
                 </p>
               </div>
 
               {/* Price */}
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <DollarSign size={15} className="text-[#c975b9]" />
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Price</p>
+                  <DollarSign size={15} className="text-[#FF6996]" />
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Price</p>
                 </div>
-                <p className="text-white/70 text-lg font-bold pl-7">{order.price || "—"}</p>
+                <p className="text-white/100 text-lg font-bold pl-7">{order.price || "—"}</p>
               </div>
 
               {/* Tracking number */}
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <Hash size={15} className="text-[#629fcc]" />
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Tracking #</p>
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Tracking #</p>
                 </div>
                 <div className="flex items-center gap-2 pl-7">
-                  <p className="text-white/70 text-base font-mono">
+                  <p className="text-white/100 text-base font-mono">
                     {order.trackingNumber || "—"}
                   </p>
                   {order.trackingNumber && <CopyButton text={order.trackingNumber} />}
@@ -207,20 +207,20 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
               <div className="sm:flex-1 border-t sm:border-t-0 sm:border-l border-white/[0.125] pt-9 sm:pt-0 sm:pl-10">
                 <div className="flex items-center gap-3 mb-5">
                   <MapPin size={15} className="text-[#629fcc]" />
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">
                     Shipment Tracking
                   </p>
                 </div>
 
                 {tracking === "loading" && (
-                  <div className="flex items-center gap-3 text-white/25 pl-7">
+                  <div className="flex items-center gap-3 text-white/100 pl-7">
                     <Loader2 size={13} className="animate-spin text-[#629fcc]" />
                     <span className="text-xs font-bold tracking-[0.18em] uppercase">Fetching tracking info…</span>
                   </div>
                 )}
 
                 {tracking === "error" && (
-                  <div className="flex items-center gap-2 text-[#c975b9]/70 pl-7">
+                  <div className="flex items-center gap-2 text-[#FF6996]/100 pl-7">
                     <AlertCircle size={13} />
                     <span className="text-xs">Could not retrieve tracking information.</span>
                   </div>
@@ -238,15 +238,15 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
                         <div key={label} className="bg-[#0d0b1e] px-4 py-3">
                           <div className="flex items-center gap-1.5 mb-1">
                             <Icon size={10} className="text-[#629fcc]" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">{label}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100">{label}</span>
                           </div>
-                          <p className="text-white/55 text-sm truncate">{val}</p>
+                          <p className="text-white/100 text-sm truncate">{val}</p>
                         </div>
                       ))}
                     </div>
 
                     {/* Status detail */}
-                    <p className="text-white/40 text-sm leading-relaxed">{trackingInfo.statusDetail}</p>
+                    <p className="text-white/100 text-sm leading-relaxed">{trackingInfo.statusDetail}</p>
 
                     {/* Timeline */}
                     {trackingInfo.events.length > 0 && (
@@ -256,12 +256,12 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
                             {i < trackingInfo.events.length - 1 && (
                               <div className="absolute left-[5px] top-3 bottom-0 w-px bg-white/[0.06]" />
                             )}
-                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ring-2 ring-[#0d0b1e] ${i === 0 ? "bg-[#629fcc]" : "bg-white/15"}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ring-2 ring-[#0d0b1e] ${i === 0 ? "bg-[#629fcc]" : "bg-white/100"}`} />
                             <div className="min-w-0">
-                              <p className={`text-sm ${i === 0 ? "text-white/70" : "text-white/35"}`}>{ev.description}</p>
+                              <p className={`text-sm ${i === 0 ? "text-white/100" : "text-white/100"}`}>{ev.description}</p>
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                {ev.location  && <span className="text-[11px] text-white/25">{ev.location}</span>}
-                                {ev.timestamp && <span className="text-[11px] text-white/20">{fmt(ev.timestamp)}</span>}
+                                {ev.location  && <span className="text-[11px] text-white/100">{ev.location}</span>}
+                                {ev.timestamp && <span className="text-[11px] text-white/100">{fmt(ev.timestamp)}</span>}
                               </div>
                             </div>
                           </div>
@@ -278,7 +278,7 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
           <div className="px-10 pb-10 border-t border-white/[0.125] pt-6">
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-lg text-white/80 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/50 border border-white/[0.08] hover:border-white/[0.14] hover:bg-white/[0.02] transition"
+              className="w-full py-3 rounded-lg text-white/100 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/100 border border-white/[0.08] hover:border-white/[0.14] hover:bg-white/[0.02] transition"
             >
               Close
             </button>
