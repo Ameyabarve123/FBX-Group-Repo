@@ -107,35 +107,6 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
               />
             </div>
           ))}
-
-          {/* Allocations */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 mb-1.5">Allocations</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-white/100 mb-1">Robots</p>
-                <input
-                  type="number"
-                  min={0}
-                  value={robotsAllocated}
-                  onChange={(e) => setRobotsAllocated(e.target.value)}
-                  placeholder="0"
-                  className={fieldClass}
-                />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-white/100 mb-1">Curriculums</p>
-                <input
-                  type="number"
-                  min={0}
-                  value={curriculumsAllocated}
-                  onChange={(e) => setCurriculumsAllocated(e.target.value)}
-                  placeholder="0"
-                  className={fieldClass}
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         <p className="text-white/100 text-[11px]">
