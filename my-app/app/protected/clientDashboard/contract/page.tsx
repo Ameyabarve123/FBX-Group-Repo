@@ -15,7 +15,7 @@ const ACCENTS = {
   pink:   { text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" },
   blue:   { text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" },
   slate:  { text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" },
-  teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10", border: "border-[#4ecdc4]/20" },
+  teal:   { text: "text-[#7de9e2]", bg: "bg-[#7de9e2]/10", border: "border-[#7de9e2]/20" },
 };
 type AccentKey = keyof typeof ACCENTS;
 

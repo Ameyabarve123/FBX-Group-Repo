@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+const FUNBOTICS_DOCS_URL = "https://funbotics.gitbook.io/funbotics-docs";
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 interface DBUser {
@@ -383,6 +385,17 @@ export default function TeacherPortal() {
         )}
 
       </SectionCard>
+
+      <div className="pt-1">
+        <a
+          href={FUNBOTICS_DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition"
+        >
+          Open Funbotics Docs
+        </a>
+      </div>
 
     </div>
   );

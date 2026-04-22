@@ -33,14 +33,14 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
   const content = (
     <>
       {active && (
-        <span className="absolute left-0 top-0 bottom-0 w-px bg-[#e8629a]" />
+        <span className="absolute left-0 top-0 bottom-0 w-px bg-[#FF6996]" />
       )}
 
       <Icon
         size={15}
         className={
           active
-            ? "text-[#e8629a]"
+            ? "text-[#FF6996]"
             : "text-white/100 group-hover:text-white/100 transition-colors"
         }
       />
@@ -50,7 +50,7 @@ function NavItem({ icon: Icon, label, active = false, onClick, href }: NavItemPr
       </span>
 
       {active && (
-        <span className="ml-auto text-[10px] text-[#e8629a]">●</span>
+        <span className="ml-auto text-[10px] text-[#FF6996]">●</span>
       )}
     </>
   );

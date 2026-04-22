@@ -20,7 +20,7 @@ export const PAGE_BG: React.CSSProperties = {
 
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
 const ACCENTS = {
-  pink:   { text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" },
+  pink:   { text: "text-[#FF6996]", bg: "bg-[#FF6996]/10", border: "border-[#FF6996]/20" },
   blue:   { text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" },
   slate:  { text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" },
   teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10", border: "border-[#4ecdc4]/20" },
@@ -42,7 +42,7 @@ function Avatar({ initials, accent }: { initials: string; accent: AccentKey }) {
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] uppercase tracking-[0.18em] text-white/85 font-bold mb-1.5">{children}</p>;
+  return <p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1.5">{children}</p>;
 }
 
 function TextInput({ value, onChange, placeholder, type = "text" }: {
@@ -54,7 +54,7 @@ function TextInput({ value, onChange, placeholder, type = "text" }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#629fcc]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/25 transition"
+      className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#629fcc]/40 focus:outline-none text-white/100 text-sm placeholder:text-white/100 transition"
     />
   );
 }
@@ -91,9 +91,9 @@ function SubmitTicketModal({ userUuid, clientName, onClose, onSubmitted }: {
         <div className="w-12 h-12 rounded-xl bg-[#629fcc]/10 flex items-center justify-center">
           <CheckCircle2 size={22} className="text-[#629fcc]" />
         </div>
-        <p className="text-white/60 text-xs uppercase tracking-[0.18em] font-bold">Ticket Submitted</p>
-        <p className="text-white/25 text-xs">We'll get back to you within 24 hours.</p>
-        <button onClick={onClose} className="mt-2 px-6 py-2 rounded-lg border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/15 hover:text-white/60 transition">Done</button>
+        <p className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Ticket Submitted</p>
+        <p className="text-white/100 text-xs">We'll get back to you within 24 hours.</p>
+        <button onClick={onClose} className="mt-2 px-6 py-2 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/100 hover:text-white/100 transition">Done</button>
       </div>
     </div>
   );
@@ -104,12 +104,12 @@ function SubmitTicketModal({ userUuid, clientName, onClose, onSubmitted }: {
       <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.12] rounded-xl p-6 max-w-md w-full shadow-[0_16px_48px_rgba(0,0,0,0.55)] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#c975b9]/10 flex items-center justify-center">
-              <TicketCheck size={14} className="text-[#c975b9]" />
+            <div className="w-7 h-7 rounded-lg bg-[#FF6996]/10 flex items-center justify-center">
+              <TicketCheck size={14} className="text-[#FF6996]" />
             </div>
-            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Submit Ticket</span>
+            <span className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Submit Ticket</span>
           </div>
-          <button onClick={onClose} className="text-white/25 hover:text-white/60 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/100 hover:text-white/100 transition text-lg leading-none">×</button>
         </div>
         <div className="space-y-3">
           <div><FieldLabel>Title</FieldLabel><TextInput value={title} onChange={setTitle} placeholder="e.g. Shipment issue" /></div>
@@ -121,14 +121,14 @@ function SubmitTicketModal({ userUuid, clientName, onClose, onSubmitted }: {
               onChange={(e) => setDetails(e.target.value)}
               rows={4}
               placeholder="Describe your issue…"
-              className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#629fcc]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/25 transition resize-none"
+              className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#629fcc]/40 focus:outline-none text-white/100 text-sm placeholder:text-white/100 transition resize-none"
             />
           </div>
-          {err && <p className="text-[#c975b9] text-xs tracking-wide">{err}</p>}
+          {err && <p className="text-[#FF6996] text-xs tracking-wide">{err}</p>}
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/30 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/50 transition">Cancel</button>
-          <button onClick={handleSubmit} disabled={!title || !details || submitting} className="flex-1 py-2.5 rounded-lg bg-[#c975b9]/10 border border-[#c975b9]/25 text-[#c975b9] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#c975b9]/15 transition disabled:opacity-30 disabled:cursor-not-allowed">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/100 transition">Cancel</button>
+          <button onClick={handleSubmit} disabled={!title || !details || submitting} className="flex-1 py-2.5 rounded-lg bg-[#FF6996]/10 border border-[#FF6996]/25 text-[#FF6996] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#FF6996]/15 transition disabled:opacity-30 disabled:cursor-not-allowed">
             {submitting ? "Submitting…" : "Submit"}
           </button>
         </div>
@@ -160,29 +160,29 @@ function TicketDetailModal({ ticket, onClose, onResolve, onDelete }: {
       <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.12] rounded-xl p-6 max-w-sm w-full shadow-[0_16px_48px_rgba(0,0,0,0.55)] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isResolved ? "bg-[#91bee3]/10" : "bg-[#c975b9]/10"}`}>
-              <TicketCheck size={14} className={isResolved ? "text-[#91bee3]" : "text-[#c975b9]"} />
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isResolved ? "bg-[#91bee3]/10" : "bg-[#FF6996]/10"}`}>
+              <TicketCheck size={14} className={isResolved ? "text-[#91bee3]" : "text-[#FF6996]"} />
             </div>
-            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Ticket Detail</span>
+            <span className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Ticket Detail</span>
           </div>
-          <button onClick={onClose} className="text-white/25 hover:text-white/60 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/100 hover:text-white/100 transition text-lg leading-none">×</button>
         </div>
         <div className="space-y-4">
-          <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/25 font-bold mb-1">Title</p><p className="text-white/70 text-sm">{ticket.title}</p></div>
-          {ticket.contact_details && <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/25 font-bold mb-1">Contact</p><p className="text-white/45 text-sm">{ticket.contact_details}</p></div>}
-          <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/25 font-bold mb-1">Details</p><p className="text-white/45 text-sm leading-relaxed">{ticket.ticket_details}</p></div>
+          <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1">Title</p><p className="text-white/100 text-sm">{ticket.title}</p></div>
+          {ticket.contact_details && <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1">Contact</p><p className="text-white/100 text-sm">{ticket.contact_details}</p></div>}
+          <div><p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1">Details</p><p className="text-white/100 text-sm leading-relaxed">{ticket.ticket_details}</p></div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/25 font-bold mb-1">Status</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1">Status</p>
             {isResolved
               ? <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#91bee3]"><CheckCircle2 size={10} /> Resolved</span>
-              : <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#c975b9]"><Clock size={10} /> Open</span>
+              : <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#FF6996]"><Clock size={10} /> Open</span>
             }
           </div>
         </div>
         <div className="flex gap-3 pt-1">
           {isResolved && (
             <button onClick={() => handle("delete")} disabled={!!working}
-              className="flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/30 text-xs uppercase tracking-[0.18em] font-bold hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 transition disabled:opacity-30 disabled:cursor-not-allowed">
+              className="flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 transition disabled:opacity-30 disabled:cursor-not-allowed">
               <Trash2 size={11} />{working === "delete" ? "Deleting…" : "Delete"}
             </button>
           )}
@@ -256,8 +256,8 @@ export default function TicketsPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
-          <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -288,14 +288,14 @@ export default function TicketsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/protected/clientDashboard")}
-            className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] transition"
+            className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] transition"
           >
             <ArrowLeft size={11} />Back
           </button>
         </div>
         <div>
-          <h1 className="text-white/75 text-2xl font-bold tracking-wide">Support Tickets</h1>
-          <p className="text-white/35 text-sm font-light tracking-wide mt-1">Manage your support requests</p>
+          <h1 className="text-white/100 text-2xl font-bold tracking-wide">Support Tickets</h1>
+          <p className="text-white/100 text-sm font-light tracking-wide mt-1">Manage your support requests</p>
         </div>
       </div>
 
@@ -303,7 +303,7 @@ export default function TicketsPage() {
       <div>
         <button
           onClick={() => setSubmitOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#c975b9]/10 border border-[#c975b9]/25 text-[#c975b9] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#c975b9]/15 transition"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF6996]/10 border border-[#FF6996]/25 text-[#FF6996] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#FF6996]/15 transition"
         >
           <Plus size={12} />New Ticket
         </button>
@@ -316,7 +316,7 @@ export default function TicketsPage() {
             <div className={`w-7 h-7 rounded-lg ${ACCENTS.pink.bg} flex items-center justify-center`}>
               <TicketCheck size={14} className={ACCENTS.pink.text} />
             </div>
-            <h2 className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Open Tickets</h2>
+            <h2 className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Open Tickets</h2>
           </div>
           <span className={`text-xs font-bold px-2 py-0.5 rounded ${ACCENTS.pink.bg} ${ACCENTS.pink.text} tracking-wider`}>
             {String(openTickets.length).padStart(2, "0")}
@@ -324,23 +324,23 @@ export default function TicketsPage() {
         </div>
 
         <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06]" style={{ gridTemplateColumns: "1.5fr 2fr 1fr" }}>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Title</span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Details</span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Status</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Title</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Details</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Status</span>
         </div>
 
         {loading ? (
           [1, 2].map((i) => (
             <div key={i} className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.06]">
-              <div className="w-9 h-9 rounded-lg bg-white/5 flex-shrink-0" />
+              <div className="w-9 h-9 rounded-lg bg-white/100 flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-white/5 rounded w-1/3" />
-                <div className="h-2.5 bg-white/5 rounded w-1/2" />
+                <div className="h-3 bg-white/100 rounded w-1/3" />
+                <div className="h-2.5 bg-white/100 rounded w-1/2" />
               </div>
             </div>
           ))
         ) : openTickets.length === 0 ? (
-          <div className="px-5 py-8 text-center text-white/20 text-xs tracking-[0.18em] uppercase">No open tickets</div>
+          <div className="px-5 py-8 text-center text-white/100 text-xs tracking-[0.18em] uppercase">No open tickets</div>
         ) : (
           openTickets.map((t) => (
             <div
@@ -350,13 +350,13 @@ export default function TicketsPage() {
             >
               <div className="flex items-center gap-3">
                 <Avatar initials={getInitials(t.title)} accent="pink" />
-                <p className="text-white/60 text-sm truncate">{t.title}</p>
+                <p className="text-white/100 text-sm truncate">{t.title}</p>
               </div>
-              <p className="hidden sm:block text-white/30 text-xs truncate">{t.ticket_details}</p>
+              <p className="hidden sm:block text-white/100 text-xs truncate">{t.ticket_details}</p>
               <div className="flex items-center gap-1.5 justify-end sm:justify-start">
-                <Clock size={10} className="text-[#c975b9]" />
-                <span className="text-[10px] uppercase tracking-widest text-[#c975b9]/70 font-bold">Open</span>
-                <ExternalLink size={11} className="text-[#c975b9] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                <Clock size={10} className="text-[#FF6996]" />
+                <span className="text-[10px] uppercase tracking-widest text-[#FF6996]/70 font-bold">Open</span>
+                <ExternalLink size={11} className="text-[#FF6996] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
               </div>
             </div>
           ))
@@ -371,7 +371,7 @@ export default function TicketsPage() {
               <div className={`w-7 h-7 rounded-lg ${ACCENTS.slate.bg} flex items-center justify-center`}>
                 <CheckCircle2 size={14} className={ACCENTS.slate.text} />
               </div>
-              <h2 className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Resolved Tickets</h2>
+              <h2 className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Resolved Tickets</h2>
             </div>
             <span className={`text-xs font-bold px-2 py-0.5 rounded ${ACCENTS.slate.bg} ${ACCENTS.slate.text} tracking-wider`}>
               {String(resolvedTickets.length).padStart(2, "0")}
@@ -379,20 +379,20 @@ export default function TicketsPage() {
           </div>
 
           <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06]" style={{ gridTemplateColumns: "1.5fr 2fr 1fr" }}>
-            <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Title</span>
-            <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Details</span>
-            <span className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">Status</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Title</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Details</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">Status</span>
           </div>
 
           {loading ? (
             <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.06]">
-              <div className="w-9 h-9 rounded-lg bg-white/5 flex-shrink-0" />
+              <div className="w-9 h-9 rounded-lg bg-white/100 flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-white/5 rounded w-1/3" />
+                <div className="h-3 bg-white/100 rounded w-1/3" />
               </div>
             </div>
           ) : resolvedTickets.length === 0 ? (
-            <div className="px-5 py-8 text-center text-white/20 text-xs tracking-[0.18em] uppercase">No resolved tickets</div>
+            <div className="px-5 py-8 text-center text-white/100 text-xs tracking-[0.18em] uppercase">No resolved tickets</div>
           ) : (
             resolvedTickets.map((t) => (
               <div
@@ -402,9 +402,9 @@ export default function TicketsPage() {
               >
                 <div className="flex items-center gap-3">
                   <Avatar initials={getInitials(t.title)} accent="slate" />
-                  <p className="text-white/35 text-sm truncate line-through">{t.title}</p>
+                  <p className="text-white/100 text-sm truncate line-through">{t.title}</p>
                 </div>
-                <p className="hidden sm:block text-white/15 text-xs truncate">{t.ticket_details}</p>
+                <p className="hidden sm:block text-white/100 text-xs truncate">{t.ticket_details}</p>
                 <div className="flex items-center gap-1.5 justify-end sm:justify-start">
                   <CheckCircle2 size={10} className="text-[#91bee3]" />
                   <span className="text-[10px] uppercase tracking-widest text-[#91bee3] font-bold">Resolved</span>

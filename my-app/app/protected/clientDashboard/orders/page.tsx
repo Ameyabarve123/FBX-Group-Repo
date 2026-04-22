@@ -24,7 +24,7 @@ export const PAGE_BG: React.CSSProperties = {
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
 const ACCENTS = {
   pink:   { text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" },
-  blue:   { text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" },
+  blue:   { text: "text-[#8AC7F4]", bg: "bg-[#8AC7F4]/10", border: "border-[#8AC7F4]/20" },
   slate:  { text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" },
   teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10", border: "border-[#4ecdc4]/20" },
 };
@@ -74,7 +74,7 @@ function TrackingCopy({ value }: { value: string }) {
     >
       <span className="text-xs text-white/100 font-mono truncate max-w-[140px]">{value}</span>
       {copied
-        ? <Check size={11} className="text-[#629fcc] flex-shrink-0" />
+        ? <Check size={11} className="text-[#8AC7F4] flex-shrink-0" />
         : <Copy size={11} className="text-white/100 flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
       }
     </button>
@@ -212,7 +212,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex items-center gap-2 justify-end sm:justify-start">
                   <StatusBadge status={status} />
-                  <ExternalLink size={11} className="text-[#629fcc] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ExternalLink size={11} className="text-[#8AC7F4] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             );

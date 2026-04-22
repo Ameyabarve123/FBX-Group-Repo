@@ -66,8 +66,8 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
   }
 
   const fieldClass =
-    "w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-sm text-white/70 " +
-    "placeholder:text-white/50 outline-none hover:border-white/[0.14] focus:border-[#91bee3]/40 transition font-mono";
+    "w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-3 text-sm text-white/100 " +
+    "placeholder:text-white/100 outline-none hover:border-white/[0.14] focus:border-[#91bee3]/40 transition font-mono";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -78,11 +78,11 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Building2 size={14} className="text-[#629fcc]" />
-            <span className="text-white/50 text-xs font-bold uppercase tracking-[0.18em]">
+            <span className="text-white/100 text-xs font-bold uppercase tracking-[0.18em]">
               Create Enterprise Account
             </span>
           </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white/50 transition">
+          <button onClick={onClose} className="text-white/100 hover:text-white/100 transition">
             <X size={16} />
           </button>
         </div>
@@ -97,7 +97,7 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
             ] as const
           ).map(({ label, value, setter, placeholder, type }) => (
             <div key={label}>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85 mb-1.5">{label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/100 mb-1.5">{label}</p>
               <input
                 type={type}
                 value={value}
@@ -109,7 +109,7 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
           ))}
         </div>
 
-        <p className="text-white/50 text-[11px]">
+        <p className="text-white/100 text-[11px]">
           Plan details can be added after creation by clicking the enterprise row.
         </p>
 
@@ -125,7 +125,7 @@ export default function CreateEnterpriseModal({ onClose, onCreated }: CreateEnte
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/80 text-xs font-bold uppercase tracking-[0.18em] hover:border-white/[0.14] hover:text-white/50 transition"
+            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/100 text-xs font-bold uppercase tracking-[0.18em] hover:border-white/[0.14] hover:text-white/100 transition"
           >
             Cancel
           </button>

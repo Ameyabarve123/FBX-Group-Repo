@@ -125,8 +125,8 @@ export default function EnterprisesPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
-          <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -163,19 +163,19 @@ export default function EnterprisesPage() {
       <div className="pb-4 border-b border-white/[0.125]">
         <button
           onClick={() => router.push("/protected/adminDashboard")}
-          className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
+          className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] mb-3 transition"
         >
           <ArrowLeft size={11} />Back
         </button>
-        <p className="text-xs uppercase tracking-[0.22em] text-white/80 mb-1">FBX Technologies</p>
-        <h1 className="text-white/75 text-2xl font-bold tracking-wide">Enterprise Accounts</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-white/100 mb-1">FBX Technologies</p>
+        <h1 className="text-white/100 text-2xl font-bold tracking-wide">Enterprise Accounts</h1>
       </div>
 
       <SectionCard title="Enterprise Accounts" icon={Building2} count={enterprises.length} accent="teal">
         <div className="px-5 py-4 border-b border-white/[0.04]">
           <button
             onClick={() => setCreateEnterpriseOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#629fcc]/15 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8AC7F4]/10 border border-[#8AC7F4]/20 text-[#8AC7F4] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#8AC7F4]/15 transition"
           >
             <Plus size={12} />New Enterprise
           </button>
@@ -201,31 +201,31 @@ export default function EnterprisesPage() {
                   className="px-5 py-4 grid sm:grid-cols-5 items-center gap-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.015] transition-colors cursor-pointer group"
                 >
                   <Avatar initials={getInitials(u.client_name)} color="teal" />
-                  <span className="text-white/60 text-sm truncate">{u.client_name}</span>
-                  <span className="text-sm text-white/70">
-                    {plan ? `$${plan.price.toLocaleString()}` : <span className="text-white/50">—</span>}
+                  <span className="text-white/100 text-sm truncate">{u.client_name}</span>
+                  <span className="text-sm text-white/100">
+                    {plan ? `$${plan.price.toLocaleString()}` : <span className="text-white/100">—</span>}
                   </span>
                   <div className="flex items-center gap-2">
                     {total > 0 ? (
                       <>
                         <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                          <div className="h-full rounded-full bg-[#629fcc] transition-all" style={{ width: `${pct}%` }} />
+                          <div className="h-full rounded-full bg-[#8AC7F4] transition-all" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-[11px] text-white/85 tabular-nums flex-shrink-0">{shipped}/{total}</span>
+                        <span className="text-[11px] text-white/100 tabular-nums flex-shrink-0">{shipped}/{total}</span>
                       </>
                     ) : (
-                      <span className="text-sm text-white/50">—</span>
+                      <span className="text-sm text-white/100">—</span>
                     )}
                   </div>
                   {/* Students column */}
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-white/70 tabular-nums">
+                    <span className="text-[11px] text-white/100 tabular-nums">
                       {students > 0
-                        ? <><span className="text-[#c975b9]">{students}</span>{curriculums > 0 && <span className="text-white/20"> /{curriculums}</span>}</>
-                        : <span className="text-white/50">—</span>
+                        ? <><span className="text-[#FF6996]">{students}</span>{curriculums > 0 && <span className="text-white/100"> /{curriculums}</span>}</>
+                        : <span className="text-white/100">—</span>
                       }
                     </span>
-                    <ExternalLink size={11} className="text-[#629fcc] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ExternalLink size={11} className="text-[#8AC7F4] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
               );

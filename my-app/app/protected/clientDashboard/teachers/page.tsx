@@ -23,9 +23,9 @@ export const PAGE_BG: React.CSSProperties = {
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
 const ACCENTS = {
   pink:   { text: "text-[#c975b9]", bg: "bg-[#c975b9]/10", border: "border-[#c975b9]/20" },
-  blue:   { text: "text-[#629fcc]", bg: "bg-[#629fcc]/10", border: "border-[#629fcc]/20" },
+  blue:   { text: "text-[#8AC7F4]", bg: "bg-[#8AC7F4]/10", border: "border-[#8AC7F4]/20" },
   slate:  { text: "text-[#91bee3]", bg: "bg-[#91bee3]/10", border: "border-[#91bee3]/20" },
-  teal:   { text: "text-[#4ecdc4]", bg: "bg-[#4ecdc4]/10", border: "border-[#4ecdc4]/20" },
+  teal:   { text: "text-[#7DE9E2]", bg: "bg-[#7DE9E2]/10", border: "border-[#7DE9E2]/20" },
 };
 type AccentKey = keyof typeof ACCENTS;
 
@@ -55,9 +55,9 @@ function getInitials(name: string) {
 function Avatar({ initials, accent = "blue" }: { initials: string; accent?: AccentKey }) {
   const s: Record<AccentKey, string> = {
     pink:  "bg-[#c975b9]/10 text-[#c975b9] ring-1 ring-[#c975b9]/25",
-    blue:  "bg-[#629fcc]/10 text-[#629fcc] ring-1 ring-[#629fcc]/25",
+    blue:  "bg-[#8AC7F4]/10 text-[#8AC7F4] ring-1 ring-[#8AC7F4]/25",
     slate: "bg-[#91bee3]/10 text-[#91bee3] ring-1 ring-[#91bee3]/25",
-    teal:  "bg-[#4ecdc4]/10 text-[#4ecdc4] ring-1 ring-[#4ecdc4]/25",
+    teal:  "bg-[#7DE9E2]/10 text-[#7DE9E2] ring-1 ring-[#7DE9E2]/25",
   };
   return (
     <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 ${s[accent]}`}>
@@ -77,7 +77,7 @@ function SectionCard({ title, icon: Icon, count, accent = "blue", children }: {
           <div className={`w-7 h-7 rounded-lg ${a.bg} flex items-center justify-center`}>
             <Icon size={14} className={a.text} />
           </div>
-          <h2 className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">{title}</h2>
+          <h2 className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">{title}</h2>
         </div>
         {count !== undefined && (
           <span className={`text-xs font-bold px-2 py-0.5 rounded ${a.bg} ${a.text} tracking-wider`}>
@@ -97,7 +97,7 @@ function TableHeader({ cols }: { cols: string[] }) {
       style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}
     >
       {cols.map((c) => (
-        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/25 font-bold">{c}</span>
+        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/100 font-bold">{c}</span>
       ))}
     </div>
   );
@@ -106,10 +106,10 @@ function TableHeader({ cols }: { cols: string[] }) {
 function LoadingRow() {
   return (
     <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.06]">
-      <div className="w-9 h-9 rounded-lg bg-white/5 flex-shrink-0" />
+      <div className="w-9 h-9 rounded-lg bg-white/100 flex-shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3 bg-white/5 rounded w-1/3" />
-        <div className="h-2.5 bg-white/5 rounded w-1/5" />
+        <div className="h-3 bg-white/100 rounded w-1/3" />
+        <div className="h-2.5 bg-white/100 rounded w-1/5" />
       </div>
     </div>
   );
@@ -117,14 +117,14 @@ function LoadingRow() {
 
 function EmptyRow({ message }: { message: string }) {
   return (
-    <div className="px-5 py-8 text-center text-white/20 text-xs tracking-[0.18em] uppercase">
+    <div className="px-5 py-8 text-center text-white/100 text-xs tracking-[0.18em] uppercase">
       {message}
     </div>
   );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] uppercase tracking-[0.18em] text-white/85 font-bold mb-1.5">{children}</p>;
+  return <p className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold mb-1.5">{children}</p>;
 }
 
 function TextInput({ value, onChange, placeholder, type = "text", disabled = false }: {
@@ -137,7 +137,7 @@ function TextInput({ value, onChange, placeholder, type = "text", disabled = fal
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#629fcc]/40 focus:outline-none text-white/70 text-sm placeholder:text-white/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+      className="w-full px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.14] focus:border-[#8AC7F4]/40 focus:outline-none text-white/100 text-sm placeholder:text-white/100 transition disabled:opacity-40 disabled:cursor-not-allowed"
     />
   );
 }
@@ -148,12 +148,12 @@ function CapacityBanner({ current, max, isAtCapacity }: { current: number; max: 
   
   if (max === 0) {
     return (
-      <div className="bg-[#c975b9]/5 border border-[#c975b9]/20 rounded-xl px-5 py-3 mb-4">
+      <div className="bg-[#FF6996]/5 border border-[#FF6996]/20 rounded-xl px-5 py-3 mb-4">
         <div className="flex items-center gap-2">
-          <AlertCircle size={12} className="text-[#c975b9]" />
-          <p className="text-[#c975b9] text-xs uppercase tracking-[0.18em]">No licenses allocated</p>
+          <AlertCircle size={12} className="text-[#FF6996]" />
+          <p className="text-[#FF6996] text-xs uppercase tracking-[0.18em]">No licenses allocated</p>
         </div>
-        <p className="text-white/25 text-xs mt-1">Contact your enterprise administrator to add student capacity.</p>
+        <p className="text-white/100 text-xs mt-1">Contact your enterprise administrator to add student capacity.</p>
       </div>
     );
   }
@@ -162,16 +162,16 @@ function CapacityBanner({ current, max, isAtCapacity }: { current: number; max: 
     <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl px-5 py-3 mb-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <GraduationCap size={12} className="text-[#629fcc]" />
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-bold">Student Capacity</span>
+          <GraduationCap size={12} className="text-[#8AC7F4]" />
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white/100 font-bold">Student Capacity</span>
         </div>
-        <span className={`text-[10px] font-bold ${isAtCapacity ? "text-[#c975b9]" : "text-[#629fcc]"}`}>
+        <span className={`text-[10px] font-bold ${isAtCapacity ? "text-[#c975b9]" : "text-[#8AC7F4]"}`}>
           {current} / {max} used
         </span>
       </div>
       <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
         <div 
-          className={`h-full rounded-full transition-all duration-500 ${isAtCapacity ? "bg-[#c975b9]" : "bg-[#629fcc]"}`}
+          className={`h-full rounded-full transition-all duration-500 ${isAtCapacity ? "bg-[#c975b9]" : "bg-[#8AC7F4]"}`}
           style={{ width: `${Math.min(100, percentage)}%` }}
         />
       </div>
@@ -357,27 +357,27 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#0a0820]/90 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.12] rounded-xl p-8 max-w-sm w-full shadow-[0_16px_48px_rgba(0,0,0,0.55)] flex flex-col items-center gap-4 text-center">
-        <div className="w-12 h-12 rounded-xl bg-[#4ecdc4]/10 flex items-center justify-center">
-          <CheckCircle2 size={22} className="text-[#4ecdc4]" />
+        <div className="w-12 h-12 rounded-xl bg-[#7DE9E2]/10 flex items-center justify-center">
+          <CheckCircle2 size={22} className="text-[#7DE9E2]" />
         </div>
-        <p className="text-white/60 text-xs uppercase tracking-[0.18em] font-bold">
+        <p className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">
           {createdPassword === "(existing user - linked to enterprise)" 
             ? "Teacher Linked Successfully" 
             : "Teacher Account Created"}
         </p>
         <div className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 text-left space-y-2">
-          <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Name</p><p className="text-white/60 text-sm">{createdTeacher.client_name}</p></div>
-          <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Email</p><p className="text-white/60 text-sm font-mono">{createdTeacher.email}</p></div>
+          <div><p className="text-[10px] text-white/100 uppercase tracking-widest font-bold mb-0.5">Name</p><p className="text-white/100 text-sm">{createdTeacher.client_name}</p></div>
+          <div><p className="text-[10px] text-white/100 uppercase tracking-widest font-bold mb-0.5">Email</p><p className="text-white/100 text-sm font-mono">{createdTeacher.email}</p></div>
           {createdPassword && createdPassword !== "(existing user - linked to enterprise)" && (
-            <div><p className="text-[10px] text-white/25 uppercase tracking-widest font-bold mb-0.5">Password</p><p className="text-white/60 text-sm font-mono">{createdPassword}</p></div>
+            <div><p className="text-[10px] text-white/100 uppercase tracking-widest font-bold mb-0.5">Password</p><p className="text-white/100 text-sm font-mono">{createdPassword}</p></div>
           )}
         </div>
-        <p className="text-white/20 text-xs">
+        <p className="text-white/100 text-xs">
           {createdPassword === "(existing user - linked to enterprise)" 
             ? "The user has been added as a teacher to your enterprise." 
             : "Save these credentials — they won't be shown again."}
         </p>
-        <button onClick={onClose} className="mt-1 px-6 py-2 rounded-lg border border-white/[0.08] text-white/40 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/15 hover:text-white/60 transition">Done</button>
+        <button onClick={onClose} className="mt-1 px-6 py-2 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/100 hover:text-white/100 transition">Done</button>
       </div>
     </div>
   );
@@ -388,14 +388,14 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
       <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.12] rounded-xl p-6 max-w-md w-full shadow-[0_16px_48px_rgba(0,0,0,0.55)] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#4ecdc4]/10 flex items-center justify-center">
-              <UserPlus size={14} className="text-[#4ecdc4]" />
+            <div className="w-7 h-7 rounded-lg bg-[#7DE9E2]/10 flex items-center justify-center">
+              <UserPlus size={14} className="text-[#7DE9E2]" />
             </div>
-            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">
+            <span className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">
               {isExistingUser ? "Link Existing Teacher" : "Create Teacher Account"}
             </span>
           </div>
-          <button onClick={onClose} className="text-white/25 hover:text-white/60 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/100 hover:text-white/100 transition text-lg leading-none">×</button>
         </div>
         <div className="space-y-3">
           <div>
@@ -426,23 +426,23 @@ function CreateTeacherModal({ enterpriseUuid, onClose, onCreated }: {
             </div>
           )}
           {isExistingUser && (
-            <div className="bg-[#4ecdc4]/5 border border-[#4ecdc4]/20 rounded-lg p-3">
-              <p className="text-[#4ecdc4] text-xs">✓ This user already exists. They will be linked as a teacher to your enterprise.</p>
+            <div className="bg-[#7DE9E2]/5 border border-[#7DE9E2]/20 rounded-lg p-3">
+              <p className="text-[#7DE9E2] text-xs">✓ This user already exists. They will be linked as a teacher to your enterprise.</p>
             </div>
           )}
           {err && <p className="text-[#c975b9] text-xs tracking-wide">{err}</p>}
-          <p className="text-white/20 text-xs">
+          <p className="text-white/100 text-xs">
             {isExistingUser 
               ? "This user will be added as a teacher to your enterprise. No new account will be created."
               : "Let the teacher know the email and password you used and they can change it when they login."}
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/30 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/50 transition">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/100 transition">Cancel</button>
           <button 
             onClick={handleCreate} 
             disabled={!name || !email || creating || (!isExistingUser && !password)} 
-            className="flex-1 py-2.5 rounded-lg bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#4ecdc4]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 rounded-lg bg-[#7DE9E2]/10 border border-[#7DE9E2]/20 text-[#7DE9E2] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#7DE9E2]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {creating ? "Processing…" : isExistingUser ? "Link Teacher" : "Create Account"}
           </button>
@@ -495,12 +495,12 @@ function AddStudentModal({ enterpriseUuid, maxCapacity, currentCount, onClose, o
       <div className="relative z-10 bg-[#0d0b1e] border border-white/[0.12] rounded-xl p-6 max-w-md w-full shadow-[0_16px_48px_rgba(0,0,0,0.55)] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#629fcc]/10 flex items-center justify-center">
-              <GraduationCap size={14} className="text-[#629fcc]" />
+            <div className="w-7 h-7 rounded-lg bg-[#8AC7F4]/10 flex items-center justify-center">
+              <GraduationCap size={14} className="text-[#8AC7F4]" />
             </div>
-            <span className="text-white/55 text-xs uppercase tracking-[0.18em] font-bold">Add Student</span>
+            <span className="text-white/100 text-xs uppercase tracking-[0.18em] font-bold">Add Student</span>
           </div>
-          <button onClick={onClose} className="text-white/25 hover:text-white/60 transition text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-white/100 hover:text-white/100 transition text-lg leading-none">×</button>
         </div>
         <div className="space-y-3">
           <div><FieldLabel>Student Email</FieldLabel><TextInput value={email} onChange={setEmail} placeholder="student@school.edu" type="email" disabled={isAtCapacity} /></div>
@@ -513,11 +513,11 @@ function AddStudentModal({ enterpriseUuid, maxCapacity, currentCount, onClose, o
           {err && <p className="text-[#c975b9] text-xs tracking-wide">{err}</p>}
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/30 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/50 transition">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-white/100 text-xs uppercase tracking-[0.18em] font-bold hover:border-white/[0.14] hover:text-white/100 transition">Cancel</button>
           <button 
             onClick={handleAdd} 
             disabled={!email || adding || isAtCapacity} 
-            className="flex-1 py-2.5 rounded-lg bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#629fcc]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 rounded-lg bg-[#8AC7F4]/10 border border-[#8AC7F4]/20 text-[#8AC7F4] text-xs uppercase tracking-[0.18em] font-bold hover:bg-[#8AC7F4]/15 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {adding ? "Adding…" : isAtCapacity ? "At Capacity" : "Add Student"}
           </button>
@@ -638,7 +638,7 @@ export default function TeachersPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0b081c]">
         <div className="text-center space-y-1">
           <p className="text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em]">Error</p>
-          <p className="text-white/50 text-base">{error}</p>
+          <p className="text-white/100 text-base">{error}</p>
         </div>
       </div>
     );
@@ -673,14 +673,14 @@ export default function TeachersPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/protected/clientDashboard")}
-            className="flex items-center gap-1.5 text-white/40 hover:text-white/60 text-[10px] font-bold uppercase tracking-[0.18em] transition"
+            className="flex items-center gap-1.5 text-white/100 hover:text-white/100 text-[10px] font-bold uppercase tracking-[0.18em] transition"
           >
             <ArrowLeft size={11} />Back
           </button>
         </div>
         <div>
-          <h1 className="text-white/75 text-2xl font-bold tracking-wide">Teachers & Students</h1>
-          <p className="text-white/35 text-sm font-light tracking-wide mt-1">Manage your educational staff and learners</p>
+          <h1 className="text-white/100 text-2xl font-bold tracking-wide">Teachers & Students</h1>
+          <p className="text-white/100 text-sm font-light tracking-wide mt-1">Manage your educational staff and learners</p>
         </div>
       </div>
 
@@ -694,7 +694,7 @@ export default function TeachersPage() {
         <div className="px-5 py-4 border-b border-white/[0.06] flex justify-end">
           <button
             onClick={() => setTeacherModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#4ecdc4]/10 border border-[#4ecdc4]/20 text-[#4ecdc4] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#4ecdc4]/15 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7DE9E2]/10 border border-[#7DE9E2]/20 text-[#7DE9E2] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#7DE9E2]/15 transition"
           >
             <Plus size={12} />Add Teacher
           </button>
@@ -714,10 +714,10 @@ export default function TeachersPage() {
             >
               <div className="flex items-center gap-3">
                 <Avatar initials={getInitials(t.client_name)} accent="teal" />
-                <p className="text-white/60 text-sm">{t.client_name}</p>
+                <p className="text-white/100 text-sm">{t.client_name}</p>
               </div>
-              <div className="flex items-center gap-2 text-white/35 text-sm">
-                <Mail size={12} className="text-white/25" />
+              <div className="flex items-center gap-2 text-white/100 text-sm">
+                <Mail size={12} className="text-white/100" />
                 <span className="truncate">{t.email}</span>
               </div>
             </div>
@@ -733,8 +733,8 @@ export default function TeachersPage() {
             disabled={isAtCapacity}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-[0.18em] transition ${
               isAtCapacity 
-                ? "bg-white/[0.03] border border-white/[0.06] text-white/30 cursor-not-allowed" 
-                : "bg-[#629fcc]/10 border border-[#629fcc]/20 text-[#629fcc] hover:bg-[#629fcc]/15"
+                ? "bg-white/[0.03] border border-white/[0.06] text-white/100 cursor-not-allowed" 
+                : "bg-[#8AC7F4]/10 border border-[#8AC7F4]/20 text-[#8AC7F4] hover:bg-[#8AC7F4]/15"
             }`}
           >
             <Plus size={12} />{isAtCapacity ? "At Capacity" : "Add Student"}
@@ -755,12 +755,12 @@ export default function TeachersPage() {
             >
               <div className="flex items-center gap-3">
                 <Avatar initials={s.student_email.charAt(0).toUpperCase()} accent="blue" />
-                <p className="text-white/60 text-sm">{s.student_email}</p>
+                <p className="text-white/100 text-sm">{s.student_email}</p>
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={() => handleDeleteStudent(s.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-white/25 hover:text-red-400 p-1"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-white/100 hover:text-red-400 p-1"
                 >
                   <Trash2 size={14} />
                 </button>

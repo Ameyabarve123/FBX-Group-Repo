@@ -44,16 +44,16 @@ export default function TicketModal({ ticket, onClose, onResolve }: TicketModalP
           {/* ── Header ── */}
           <div className="px-10 py-8 border-b border-white/[0.125] flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/50 mb-2">
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/100 mb-2">
                 Support Ticket
               </p>
-              <h2 className="text-white/75 text-3xl font-bold tracking-wide">
+              <h2 className="text-white/100 text-3xl font-bold tracking-wide">
                 {ticket.title}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center text-white/80 hover:text-white/50 transition mt-1"
+              className="w-10 h-10 flex items-center justify-center text-white/100 hover:text-white/100 transition mt-1"
             >
               <X size={20} />
             </button>
@@ -65,28 +65,28 @@ export default function TicketModal({ ticket, onClose, onResolve }: TicketModalP
             {/* Name */}
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <User size={15} className="text-[#c975b9]" />
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Name</p>
+                <User size={15} className="text-[#FF6996]" />
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Name</p>
               </div>
-              <p className="text-white/50 text-base leading-relaxed pl-7">{ticket.name}</p>
+              <p className="text-white/100 text-base leading-relaxed pl-7">{ticket.name}</p>
             </div>
 
             {/* Contact */}
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <Phone size={15} className="text-[#629fcc]" />
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Contact</p>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Contact</p>
               </div>
-              <p className="text-white/50 text-base leading-relaxed pl-7">{ticket.contact}</p>
+              <p className="text-white/100 text-base leading-relaxed pl-7">{ticket.contact}</p>
             </div>
 
             {/* Details */}
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <FileText size={15} className="text-[#91bee3]" />
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Details</p>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/100">Details</p>
               </div>
-              <p className="text-white/50 text-base leading-relaxed pl-7">{ticket.details}</p>
+              <p className="text-white/100 text-base leading-relaxed pl-7">{ticket.details}</p>
             </div>
 
           </div>
@@ -95,13 +95,13 @@ export default function TicketModal({ ticket, onClose, onResolve }: TicketModalP
           <div className="px-10 pb-10 border-t border-white/[0.125] pt-6 flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-lg text-white/80 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/50 border border-white/[0.08] hover:border-white/[0.14] transition"
+              className="flex-1 py-3 rounded-lg text-white/100 text-xs font-bold uppercase tracking-[0.2em] hover:text-white/100 border border-white/[0.08] hover:border-white/[0.14] transition"
             >
               Close
             </button>
             <button
               onClick={() => { onResolve(ticket); onClose(); }}
-              className="flex-1 py-3 rounded-lg flex items-center justify-center gap-2 bg-[#c975b9]/10 border border-[#c975b9]/20 text-[#c975b9] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#c975b9]/15 transition"
+              className="flex-1 py-3 rounded-lg flex items-center justify-center gap-2 bg-[#FF6996]/10 border border-[#FF6996]/20 text-[#FF6996] text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#FF6996]/15 transition"
             >
               <CheckCircle size={12} />
               Resolve Ticket
