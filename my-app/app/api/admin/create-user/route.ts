@@ -21,12 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: authError?.message ?? "Failed to create auth user" }, { status: 400 });
     }
 
-    // 2. Upsert into public.users with role = 0 (teacher)
+    // 2. Upsert into public.users with role = 3 (enterprise)
     const { error: dbError } = await supabase.from("users").upsert({
       client_name: name,
       user_uuid: authData.user.id,
       is_admin: 0,
-      role: 0,
+      role: 3,
     }, { onConflict: "user_uuid" });
 
     if (dbError) {
