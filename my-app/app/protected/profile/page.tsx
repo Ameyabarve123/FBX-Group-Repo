@@ -17,7 +17,7 @@ async function ProfileContent() {
   try {
     const { data } = await supabase
       .from("users")
-      .select("client_name, is_admin, role, created_at")
+      .select("client_name, is_admin, role, address, created_at")
       .eq("user_uuid", user.id)
       .single();
     dbUser = data;
