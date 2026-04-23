@@ -68,25 +68,6 @@ function fmt(iso: string) {
   } catch { return iso; }
 }
 
-// ─── STATUS BADGE ─────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; color: string }> = {
-    DL: { label: "Delivered",          color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
-    OD: { label: "Out for Delivery",   color: "text-[#f59e42] bg-[#f59e42]/10 border-[#f59e42]/20" },
-    IT: { label: "In Transit",         color: "text-[#91bee3] bg-[#91bee3]/10 border-[#91bee3]/20" },
-    PU: { label: "Picked Up",          color: "text-[#629fcc] bg-[#629fcc]/10 border-[#629fcc]/20" },
-    DE: { label: "Delivery Exception", color: "text-[#FF6996] bg-[#FF6996]/10 border-[#FF6996]/20" },
-    OC: { label: "Label Created",      color: "text-white/100 bg-white/100 border-white/100" },
-  };
-  const cfg = map[status.toUpperCase()] ?? { label: status, color: "text-white/100 bg-white/100 border-white/100" };
-  return (
-    <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded border font-bold ${cfg.color}`}>
-      {cfg.label}
-    </span>
-  );
-}
-
 // ─── COPY BUTTON ──────────────────────────────────────────────────────────────
 
 function CopyButton({ text }: { text: string }) {
@@ -150,7 +131,6 @@ export default function OrderModal({ order, onClose }: OrderModalProps) {
               </p>
               <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="text-white/100 text-3xl font-bold tracking-wide">{order.title}</h2>
-                {trackingInfo && <StatusBadge status={trackingInfo.status} />}
               </div>
             </div>
             <button
