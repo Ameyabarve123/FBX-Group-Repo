@@ -13,6 +13,11 @@ import { createClient } from "@/lib/supabase/client";
 
 const FUNBOTICS_DOCS_URL = "https://funbotics.gitbook.io/funbotics-docs";
 
+// ─── PAGE BG ──────────────────────────────────────────────────────────────────
+export const PAGE_BG: React.CSSProperties = {
+  background: 'linear-gradient(0deg, #000000 80%, #280f2e 87%, #59426a 100%)',
+};
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 interface DBUser {
@@ -37,9 +42,9 @@ interface DBPlan {
 // ─── ACCENTS ─────────────────────────────────────────────────────────────────
 
 const ACCENTS = {
-  violet: { text: "text-[#9b7fe8]", bg: "bg-[#9b7fe8]/10", border: "border-[#9b7fe8]/20" },
-  slate:  { text: "text-[#7e8fb5]", bg: "bg-[#7e8fb5]/10", border: "border-[#7e8fb5]/20" },
-  pink:   { text: "text-[#e8629a]", bg: "bg-[#e8629a]/10", border: "border-[#e8629a]/20" },
+  violet: { text: "text-[#D6BDF2]", bg: "bg-[#D6BDF2]/10", border: "border-[#D6BDF2]/20" },
+  slate:  { text: "text-[#8AC7F4]", bg: "bg-[#8AC7F4]/10", border: "border-[#8AC7F4]/20" },
+  pink:   { text: "text-[#FF6996]", bg: "bg-[#FF6996]/10", border: "border-[#FF6996]/20" },
 };
 type AccentKey = keyof typeof ACCENTS;
 
@@ -50,14 +55,14 @@ function SectionCard({ title, icon: Icon, count, accent = "violet", children }: 
 }) {
   const a = ACCENTS[accent];
   return (
-    <div className="bg-[#0d0c14] border border-white/[0.06]">
+    <div className={`bg-[#0d0b1e] border ${a.border} rounded-xl overflow-hidden`}>
       <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
           <Icon size={15} className={a.text} />
-          <h2 className="text-white/50 text-xs uppercase tracking-[0.18em] font-medium">{title}</h2>
+          <h2 className={`text-white text-[10px] uppercase tracking-[0.18em] font-bold`} style={{ fontFamily: "'Montserrat', sans-serif" }}>{title}</h2>
         </div>
         {count !== undefined && (
-          <span className={`text-xs font-bold px-2 py-0.5 ${a.bg} ${a.text} tracking-wider`}>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded ${a.bg} ${a.text} tracking-wider`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
             {String(count).padStart(2, "0")}
           </span>
         )}
@@ -72,7 +77,7 @@ function TableHeader({ cols }: { cols: string[] }) {
     <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.04]"
       style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
       {cols.map((c) => (
-        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/20 font-medium">{c}</span>
+        <span key={c} className="text-[11px] uppercase tracking-[0.18em] text-white/40 font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>{c}</span>
       ))}
     </div>
   );
@@ -81,7 +86,7 @@ function TableHeader({ cols }: { cols: string[] }) {
 function LoadingRow() {
   return (
     <div className="px-5 py-4 flex items-center gap-3 animate-pulse border-b border-white/[0.04]">
-      <div className="w-10 h-10 rounded-md bg-white/5 flex-shrink-0" />
+      <div className="w-10 h-10 rounded-lg bg-white/5 flex-shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-3 bg-white/5 rounded w-1/3" />
         <div className="h-2.5 bg-white/5 rounded w-1/5" />
@@ -91,19 +96,19 @@ function LoadingRow() {
 }
 
 function EmptyRow({ message }: { message: string }) {
-  return <div className="px-5 py-8 text-center text-white/15 text-xs tracking-[0.18em] uppercase">{message}</div>;
+  return <div className="px-5 py-8 text-center text-white/40 text-[10px] tracking-[0.18em] uppercase" style={{ fontFamily: "'Montserrat', sans-serif" }}>{message}</div>;
 }
 
 function Avatar({ initials }: { initials: string }) {
   return (
-    <div className="w-10 h-10 rounded-md flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 bg-[#9b7fe8]/10 text-[#9b7fe8] ring-1 ring-[#9b7fe8]/25">
+    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold tracking-widest flex-shrink-0 bg-[#D6BDF2]/10 text-[#D6BDF2] ring-1 ring-[#D6BDF2]/25" style={{ fontFamily: "'Montserrat', sans-serif" }}>
       {initials}
     </div>
   );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] uppercase tracking-[0.18em] text-white/20 mb-1.5">{children}</p>;
+  return <p className="text-[10px] uppercase tracking-[0.18em] text-white font-bold mb-1.5" style={{ fontFamily: "'Montserrat', sans-serif" }}>{children}</p>;
 }
 
 // ─── CAPACITY BANNER ─────────────────────────────────────────────────────────
@@ -114,35 +119,35 @@ function CapacityBanner({ current, max }: { current: number; max: number }) {
   
   if (max === 0) {
     return (
-      <div className="bg-[#e8629a]/5 border border-[#e8629a]/20 px-5 py-3 mb-4">
+      <div className="bg-[#FF6996]/5 border border-[#FF6996]/20 px-5 py-3 mb-4 rounded-xl">
         <div className="flex items-center gap-2">
-          <AlertCircle size={12} className="text-[#e8629a]" />
-          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">No licenses allocated</p>
+          <AlertCircle size={12} className="text-[#FF6996]" />
+          <p className="text-[#FF6996] text-[10px] uppercase tracking-[0.18em] font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>No licenses allocated</p>
         </div>
-        <p className="text-white/25 text-xs mt-1">Contact your enterprise administrator to add student capacity.</p>
+        <p className="text-white text-xs mt-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>Contact your enterprise administrator to add student capacity.</p>
       </div>
     );
   }
   
   return (
-    <div className="bg-white/[0.02] border border-white/[0.06] px-5 py-3 mb-4">
+    <div className="bg-[#0d0b1e] border border-[#D6BDF2]/20 px-5 py-3 mb-4 rounded-xl">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <GraduationCap size={12} className="text-[#9b7fe8]" />
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/40 font-medium">Student Capacity For Enterprise</span>
+          <GraduationCap size={12} className="text-[#D6BDF2]" />
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>Student Capacity For Enterprise</span>
         </div>
-        <span className={`text-[10px] font-bold ${isFull ? "text-[#e8629a]" : "text-[#9b7fe8]"}`}>
+        <span className={`text-[10px] font-bold ${isFull ? "text-[#FF6996]" : "text-[#D6BDF2]"}`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
           {current} / {max} used
         </span>
       </div>
       <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
         <div 
-          className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-[#e8629a]" : "bg-[#9b7fe8]"}`}
+          className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-[#FF6996]" : "bg-[#D6BDF2]"}`}
           style={{ width: `${Math.min(100, percentage)}%` }}
         />
       </div>
       {isFull && (
-        <p className="text-[#e8629a] text-[10px] mt-2 flex items-center gap-1">
+        <p className="text-[#FF6996] text-[10px] mt-2 flex items-center gap-1" style={{ fontFamily: "'Montserrat', sans-serif" }}>
           <AlertCircle size={10} /> Capacity reached. Cannot add more students.
         </p>
       )}
@@ -263,10 +268,10 @@ export default function TeacherPortal() {
   }
 
   if (error) return (
-    <div className="flex-1 flex items-center justify-center p-8 bg-[#080710]">
+    <div className="flex-1 flex items-center justify-center p-8 min-h-screen" style={PAGE_BG}>
       <div className="text-center space-y-1">
-        <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Error</p>
-        <p className="text-white/30 text-base">{error}</p>
+        <p className="text-[#FF6996] text-xs uppercase tracking-[0.18em] font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>Error</p>
+        <p className="text-white text-base" style={{ fontFamily: "'Montserrat', sans-serif" }}>{error}</p>
       </div>
     </div>
   );
@@ -276,21 +281,28 @@ export default function TeacherPortal() {
   const isAtCapacity = maxCapacity > 0 && currentCount >= maxCapacity;
 
   return (
-    <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto bg-[#080710] min-h-screen">
+    <>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');`}</style>
+    <div className="flex-1 px-5 sm:px-8 py-8 space-y-5 overflow-auto min-h-screen" style={{ ...PAGE_BG, fontFamily: "'Montserrat', sans-serif" }}>
 
       {/* Header */}
-      <div className="pb-4 border-b border-white/[0.06]">
-        <p className="text-xs uppercase tracking-[0.22em] text-white/20 mb-1">FBX Technologies</p>
-        <h1 className="text-white/75 text-2xl font-light tracking-wide">
-          {loading ? "Portal" : `Welcome, ${dbUser?.client_name ?? "Teacher"}`}
-        </h1>
+      <div className="pb-4 border-b border-white/[0.125] space-y-3">
+        <div className="flex items-center gap-4">
+          <img src="/fbx_logo.png" alt="FBX Logo" className="max-h-[7vh] max-w-full" />
+          <div>
+            <h1 className="text-white text-2xl font-bold tracking-wide">Teacher Dashboard</h1>
+          </div>
+        </div>
+        <p className="text-white/100 text-sm font-light tracking-wide">
+          {loading ? "Loading portal…" : `Welcome, ${dbUser?.client_name ?? "Teacher"}`}
+        </p>
       </div>
 
       {/* No enterprise warning */}
       {!loading && !enterpriseUuid && (
-        <div className="bg-[#e8629a]/5 border border-[#e8629a]/20 px-5 py-4">
-          <p className="text-[#e8629a] text-xs uppercase tracking-[0.18em]">Not linked to an enterprise</p>
-          <p className="text-white/25 text-xs mt-1">Contact your enterprise administrator to be added.</p>
+        <div className="bg-[#FF6996]/5 border border-[#FF6996]/20 px-5 py-4 rounded-xl">
+          <p className="text-[#FF6996] text-[10px] uppercase tracking-[0.18em] font-bold">Not linked to an enterprise</p>
+          <p className="text-white text-xs mt-1">Contact your enterprise administrator to be added.</p>
         </div>
       )}
 
@@ -300,12 +312,12 @@ export default function TeacherPortal() {
       )}
 
       {/* Stat card */}
-      <div className="relative bg-[#0d0c14] border border-white/[0.06] p-5 overflow-hidden hover:border-white/10 transition-colors duration-300">
-        <div className="absolute inset-x-0 top-0 h-px bg-[#9b7fe8]/10" />
-        <p className="text-xs uppercase tracking-[0.18em] text-white/25 font-medium mb-3">Students Enrolled</p>
+      <div className="relative bg-[#0d0b1e] border border-[#D6BDF2]/20 p-5 overflow-hidden hover:border-[#D6BDF2]/40 transition-colors duration-300 rounded-xl">
+        <div className="absolute inset-x-0 top-0 h-px bg-[#D6BDF2]/10" />
+        <p className="text-[10px] uppercase tracking-[0.18em] text-white font-bold mb-3">Students Enrolled</p>
         {loading
           ? <div className="h-10 bg-white/5 rounded w-12 animate-pulse" />
-          : <p className="text-4xl font-light text-[#9b7fe8] tabular-nums">{String(enrolled.length).padStart(2, "0")}</p>
+          : <p className="text-4xl font-light text-[#D6BDF2] tabular-nums">{String(enrolled.length).padStart(2, "0")}</p>
         }
       </div>
 
@@ -324,13 +336,15 @@ export default function TeacherPortal() {
                 onKeyDown={(e) => e.key === "Enter" && !isAtCapacity && handleAdd()}
                 placeholder="student@university.edu"
                 disabled={isAtCapacity || !enterpriseUuid}
-                className="w-full bg-[#080710] border border-white/[0.06] px-4 py-3 text-sm text-white/60 placeholder:text-white/15 outline-none focus:border-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-black/30 border border-white/[0.06] rounded-lg px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-[#D6BDF2]/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ fontFamily: "'Montserrat', sans-serif" }}
               />
             </div>
             <button
               onClick={handleAdd}
               disabled={!email || submitting || loading || !enterpriseUuid || isAtCapacity}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-[#D6BDF2]/10 border border-[#D6BDF2]/20 rounded-lg text-[#D6BDF2] text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-[#D6BDF2]/15 transition disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
             >
               <UserPlus size={12} />
               {submitting ? "Adding…" : isAtCapacity ? "At Capacity" : "Add Student"}
@@ -339,14 +353,14 @@ export default function TeacherPortal() {
 
           {formErr && (
             <div className="mt-3 flex items-center gap-2">
-              <AlertCircle size={12} className="text-[#e8629a]" />
-              <p className="text-[#e8629a] text-xs">{formErr}</p>
+              <AlertCircle size={12} className="text-[#FF6996]" />
+              <p className="text-[#FF6996] text-xs font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>{formErr}</p>
             </div>
           )}
 
           {success && (
             <div className="mt-3">
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#9b7fe8]">
+              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#D6BDF2] font-bold" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 <CheckCircle2 size={10} /> Student added
               </span>
             </div>
@@ -363,13 +377,13 @@ export default function TeacherPortal() {
                   <div key={s.id} className="px-5 py-3.5 grid sm:grid-cols-2 items-center gap-3 border-b border-white/[0.04] last:border-0">
                     <div className="flex items-center gap-3">
                       <Avatar initials={s.student_email.slice(0, 2).toUpperCase()} />
-                      <span className="text-white/50 text-sm truncate">{s.student_email}</span>
+                      <span className="text-white text-sm truncate font-medium" style={{ fontFamily: "'Montserrat', sans-serif" }}>{s.student_email}</span>
                     </div>
                     <div className="flex justify-end">
                       <button
                         onClick={() => handleRemove(s.id)}
                         title="Remove student"
-                        className="text-white/15 hover:text-red-400 transition"
+                        className="text-white/40 hover:text-red-400 transition"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -391,12 +405,14 @@ export default function TeacherPortal() {
           href={FUNBOTICS_DOCS_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#9b7fe8]/10 border border-[#9b7fe8]/20 text-[#9b7fe8] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#9b7fe8]/15 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#D6BDF2]/10 border border-[#D6BDF2]/20 text-[#D6BDF2] text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-[#D6BDF2]/15 transition"
+          style={{ fontFamily: "'Montserrat', sans-serif" }}
         >
           Open Funbotics Docs
         </a>
       </div>
 
     </div>
+    </>
   );
 }
